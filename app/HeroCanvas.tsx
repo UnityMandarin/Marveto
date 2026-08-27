@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { Camera, Geometry, Mesh, Program, Renderer, Texture, Transform } from 'ogl';
+import { assetPath } from './asset-path';
 
 const vertex = /* glsl */ `
   attribute vec2 uv;
@@ -77,7 +78,7 @@ export default function HeroCanvas() {
     const texture = new Texture(gl);
     const image = new Image();
     image.decoding = 'async';
-    image.src = '/images/hero.webp';
+    image.src = assetPath('/images/hero.webp');
     image.onload = () => { texture.image = image; };
 
     const mouse = { current: [0.5, 0.5], target: [0.5, 0.5] };

@@ -1,6 +1,6 @@
 # Marveto
 
-## [Visit the live website →](https://marveto-studio.unity-mandar-3391.chatgpt.site)
+## [Visit the live website →](https://unitymandarin.github.io/Marveto/)
 
 An original, immersive website for Marveto—a compact team that plans, designs, and builds clear company websites with practical scope and sensible overhead.
 
@@ -27,7 +27,10 @@ pnpm run typecheck
 pnpm run test
 pnpm run lint
 pnpm run build
+pnpm run build:pages
 ```
+
+The main branch deploys the static GitHub Pages build automatically. The Pages entrypoint reuses the same React experience, styles, imagery, fonts, GSAP motion, OGL canvas, and privacy-preserving inquiry flow as the primary application.
 
 ## Content
 

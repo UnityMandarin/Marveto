@@ -8,6 +8,7 @@
   --orange: #ff6542;
   --lavender: #d8c8ff;
   --line: rgba(17, 17, 17, 0.2);
+  --noise-image: url('/images/noise.png');
 }
 
 * { box-sizing: border-box; }
@@ -107,7 +108,7 @@ em { font-family: var(--font-editorial), Georgia, serif; font-weight: 500; }
 .hero-image img, .hero-canvas canvas { width: 100%; height: 100%; object-fit: cover; }
 .hero-canvas { z-index: 1; }
 .hero-vignette { position: absolute; z-index: 2; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,.08), transparent 18%, transparent 70%, rgba(9,10,18,.16)); pointer-events: none; }
-.hero-grain { position: absolute; z-index: 3; inset: 0; opacity: .22; mix-blend-mode: soft-light; background: url('/images/noise.png') repeat; pointer-events: none; }
+.hero-grain { position: absolute; z-index: 3; inset: 0; opacity: .22; mix-blend-mode: soft-light; background: var(--noise-image) repeat; pointer-events: none; }
 .hero-copy { position: relative; z-index: 4; width: min(1160px, 93vw); margin-top: 4vh; text-align: center; }
 .eyebrow { margin: 0 0 23px; text-transform: uppercase; letter-spacing: .14em; font-size: 10px; }
 .hero h1 { margin: 0; font-size: clamp(66px, 10.8vw, 168px); line-height: .76; letter-spacing: -.078em; font-weight: 500; text-wrap: balance; }
@@ -169,7 +170,7 @@ em { font-family: var(--font-editorial), Georgia, serif; font-weight: 500; }
 .services-list ul { margin: 0; padding: 0; list-style: none; text-transform: uppercase; letter-spacing: .1em; font-size: 8px; line-height: 2; }
 
 .manifesto { position: relative; min-height: 105svh; overflow: hidden; display: flex; flex-direction: column; justify-content: center; background: var(--lavender); }
-.manifesto::after { content: ''; position: absolute; inset: 0; background: url('/images/noise.png') repeat; opacity: .08; pointer-events: none; }
+.manifesto::after { content: ''; position: absolute; inset: 0; background: var(--noise-image) repeat; opacity: .08; pointer-events: none; }
 .manifesto h2 { position: relative; z-index: 2; max-width: 1250px; margin: 6vh auto 0; text-align: center; font-size: clamp(58px, 8.9vw, 145px); line-height: .84; letter-spacing: -.07em; font-weight: 480; }
 .manifesto-orb { position: absolute; z-index: 1; right: 3vw; top: 15vh; width: clamp(160px, 25vw, 390px); aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle at 30% 25%, white, #e8dcff 28%, #ff7754 58%, #3151ff 100%); box-shadow: 0 60px 100px rgba(55,30,140,.24); }
 .manifesto-orb span { position: absolute; width: 38%; height: 20%; left: 16%; top: 18%; border-radius: 50%; background: rgba(255,255,255,.58); filter: blur(12px); transform: rotate(-30deg); }

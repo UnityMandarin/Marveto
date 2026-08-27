@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { assetPath } from './asset-path';
 import HeroCanvas from './HeroCanvas';
 import { buildMailto, formatInquiry, Inquiry, InquiryErrors, validateInquiry } from './inquiry';
 import { benefits, process, Project, projects, services, siteConfig } from './site-data';
@@ -12,9 +13,9 @@ const emptyInquiry: Inquiry = { name: '', email: '', company: '', budget: '', br
 function ProjectPicture({ project }: { project: Project }) {
   return (
     <picture>
-      <source srcSet={`${project.image}.avif`} type="image/avif" />
-      <source srcSet={`${project.image}.webp`} type="image/webp" />
-      <img src={`${project.image}.webp`} alt={project.alt} loading="lazy" decoding="async" />
+      <source srcSet={assetPath(`${project.image}.avif`)} type="image/avif" />
+      <source srcSet={assetPath(`${project.image}.webp`)} type="image/webp" />
+      <img src={assetPath(`${project.image}.webp`)} alt={project.alt} loading="lazy" decoding="async" />
     </picture>
   );
 }
@@ -171,9 +172,9 @@ export default function MarvetoExperience() {
       <main id="index">
         <section className="hero" aria-labelledby="hero-title">
           <picture className="hero-image">
-            <source srcSet="/images/hero.avif" type="image/avif" />
-            <source srcSet="/images/hero.webp" type="image/webp" />
-            <img src="/images/hero.webp" alt="" fetchPriority="high" />
+            <source srcSet={assetPath('/images/hero.avif')} type="image/avif" />
+            <source srcSet={assetPath('/images/hero.webp')} type="image/webp" />
+            <img src={assetPath('/images/hero.webp')} alt="" fetchPriority="high" />
           </picture>
           <HeroCanvas />
           <div className="hero-vignette" aria-hidden="true" />
