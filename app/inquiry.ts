@@ -12,7 +12,7 @@ export function validateInquiry(inquiry: Inquiry): InquiryErrors {
   const errors: InquiryErrors = {};
   if (!inquiry.name.trim()) errors.name = 'Tell us your name.';
   if (!/^\S+@\S+\.\S+$/.test(inquiry.email.trim())) errors.email = 'Enter a valid email.';
-  if (!inquiry.budget) errors.budget = 'Choose an investment range.';
+  if (!inquiry.budget) errors.budget = 'Choose a working budget.';
   if (inquiry.brief.trim().length < 20) errors.brief = 'Give us at least a sentence about the project.';
   return errors;
 }
@@ -24,7 +24,7 @@ export function formatInquiry(inquiry: Inquiry): string {
     `Name: ${inquiry.name.trim()}`,
     `Email: ${inquiry.email.trim()}`,
     `Company: ${inquiry.company.trim() || 'Not provided'}`,
-    `Investment: ${inquiry.budget}`,
+    `Working budget: ${inquiry.budget}`,
     '',
     'Project:',
     inquiry.brief.trim(),

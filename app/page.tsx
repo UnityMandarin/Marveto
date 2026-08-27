@@ -9,7 +9,7 @@ export default function Home() {
     description: siteConfig.description,
     email: siteConfig.contactEmail,
     areaServed: 'Worldwide',
-    serviceType: ['Web strategy', 'Web design', 'Creative development', 'Digital identity'],
+    serviceType: ['Company websites', 'Web strategy', 'Web design', 'Website development'],
   };
 
   return (

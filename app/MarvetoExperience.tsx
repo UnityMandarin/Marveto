@@ -5,7 +5,7 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import HeroCanvas from './HeroCanvas';
 import { buildMailto, formatInquiry, Inquiry, InquiryErrors, validateInquiry } from './inquiry';
-import { process, Project, projects, services, siteConfig } from './site-data';
+import { benefits, process, Project, projects, services, siteConfig } from './site-data';
 
 const emptyInquiry: Inquiry = { name: '', email: '', company: '', budget: '', brief: '' };
 
@@ -136,7 +136,7 @@ export default function MarvetoExperience() {
 
       <div className={`loader ${loading ? 'is-visible' : ''}`} aria-hidden={!loading}>
         <div className="loader-mark">marveto<span>°</span></div>
-        <p>Building the remarkable</p>
+        <p>Clear sites. Sensible process.</p>
         <div className="loader-line"><span /></div>
         <button type="button" onClick={() => setLoading(false)}>Skip intro</button>
       </div>
@@ -179,34 +179,34 @@ export default function MarvetoExperience() {
           <div className="hero-vignette" aria-hidden="true" />
           <div className="hero-grain" aria-hidden="true" />
           <div className="hero-copy">
-            <p className="eyebrow">Independent digital studio — strategy, design, development</p>
-            <h1 id="hero-title"><em>We make websites</em><span>people remember.</span></h1>
+            <p className="eyebrow">Websites for companies — strategy, design, development</p>
+            <h1 id="hero-title"><em>We make websites</em><span>for companies.</span></h1>
             <p className="hero-summary">
-              Marveto creates cinematic digital experiences for ambitious brands that refuse to blend in.
+              Clear, credible websites that help companies explain their value, look established, and give interested people a useful next step—without oversized agency costs or unnecessary complexity.
             </p>
             <div className="hero-actions">
-              <a className="pill pill-dark magnetic" href="#contact">Start a project ↘</a>
-              <a className="pill pill-light magnetic" href="#work">See what we make ↓</a>
+              <a className="pill pill-dark magnetic" href="#contact">Plan my website ↘</a>
+              <a className="pill pill-light magnetic" href="#work">See the examples ↓</a>
             </div>
           </div>
           <div className="hero-meta" aria-hidden="true">
-            <span>Scroll to enter</span><span>Independent · Worldwide</span><span>©2026</span>
+            <span>Scroll to see why</span><span>Practical pricing · Efficient delivery</span><span>©2026</span>
           </div>
         </section>
 
         <div className="marquee" aria-label="Capabilities">
           <div>
-            <span>Strategy</span><i>✦</i><span>Digital identity</span><i>✦</i><span>Web design</span><i>✦</i>
-            <span>Creative development</span><i>✦</i><span>Motion</span><i>✦</i><span>WebGL</span><i>✦</i>
-            <span aria-hidden="true">Strategy</span><i aria-hidden="true">✦</i><span aria-hidden="true">Digital identity</span><i aria-hidden="true">✦</i>
+            <span>Credibility</span><i>✦</i><span>Clear offers</span><i>✦</i><span>Web design</span><i>✦</i>
+            <span>Fast-moving process</span><i>✦</i><span>Search foundations</span><i>✦</i><span>Easy next steps</span><i>✦</i>
+            <span aria-hidden="true">Credibility</span><i aria-hidden="true">✦</i><span aria-hidden="true">Clear offers</span><i aria-hidden="true">✦</i>
           </div>
         </div>
 
         <section id="work" className="work-section section-pad" aria-labelledby="work-title">
           <div className="section-intro" data-reveal>
-            <p className="section-kicker">Selected studio concepts · 2026</p>
-            <h2 id="work-title">Three worlds.<br /><em>One point of view.</em></h2>
-            <p className="section-note">Original concept work created to show how we think, design, and build—never presented as commissioned client work.</p>
+            <p className="section-kicker">Company website concepts · 2026</p>
+            <h2 id="work-title">Different businesses.<br /><em>Clearer websites.</em></h2>
+            <p className="section-note">Three self-initiated examples showing how we adapt the message, structure, and experience to the company. They demonstrate our approach and are not presented as commissioned client work.</p>
           </div>
 
           <div className="project-grid">
@@ -221,7 +221,7 @@ export default function MarvetoExperience() {
                     <span className="project-arrow">↗</span>
                   </div>
                 </button>
-                {index === 0 && <p className="project-aside">Clarity for complexity</p>}
+                {index === 0 && <p className="project-aside">Business first. Built with craft.</p>}
               </article>
             ))}
           </div>
@@ -229,9 +229,9 @@ export default function MarvetoExperience() {
 
         <section id="services" className="services-section section-pad" aria-labelledby="services-title">
           <div className="services-heading" data-reveal>
-            <p className="section-kicker">What we do</p>
-            <h2 id="services-title">From first thought<br />to final frame.</h2>
-            <p>One compact team owns the strategy, the design, and the code—so the idea survives the whole journey.</p>
+            <p className="section-kicker">What you get</p>
+            <h2 id="services-title">What you need.<br />Nothing you do not.</h2>
+            <p>A compact team keeps decisions moving and overhead sensible. The scope is shaped around the job your website needs to do.</p>
           </div>
           <div className="services-list">
             {services.map((service) => (
@@ -247,20 +247,32 @@ export default function MarvetoExperience() {
 
         <section className="manifesto section-pad" aria-labelledby="manifesto-title">
           <div className="manifesto-orb" aria-hidden="true"><span /></div>
-          <p className="section-kicker">Our point of view</p>
+          <p className="section-kicker">Why a website still matters</p>
           <h2 id="manifesto-title" data-reveal>
-            The internet has enough<br />pages. We make <em>places.</em>
+            Your website can work<br /><em>before you speak.</em>
           </h2>
           <div className="manifesto-copy" data-reveal>
-            <p>Places with a mood. A pace. A reason to stay.</p>
-            <p>Every project starts with meaning, gains a visual language, and ends as carefully engineered code. The work is expressive because the thinking underneath it is exact.</p>
+            <p>People will look for your company somewhere. Give them a clear place you control.</p>
+            <p>A website will not solve every business problem. It can make it easier for the right people to understand you, trust what they see, and decide what to do next.</p>
+          </div>
+          <div className="benefit-grid">
+            {benefits.map((benefit) => (
+              <article key={benefit.index} data-reveal>
+                <span>{benefit.index}</span>
+                <h3>{benefit.title}</h3>
+                <p>{benefit.description}</p>
+              </article>
+            ))}
           </div>
         </section>
 
         <section id="process" className="process-section section-pad" aria-labelledby="process-title">
           <div className="process-heading" data-reveal>
-            <p className="section-kicker">How it happens</p>
-            <h2 id="process-title">Clear process.<br /><em>Unexpected result.</em></h2>
+            <div>
+              <p className="section-kicker">How it happens</p>
+              <p className="process-note">Focused projects can move quickly when decisions and content are ready. We set a realistic schedule after the scope is clear.</p>
+            </div>
+            <h2 id="process-title">Efficient by design.<br /><em>Clear at every step.</em></h2>
           </div>
           <ol>
             {process.map((step) => (
@@ -273,9 +285,9 @@ export default function MarvetoExperience() {
 
         <section id="contact" className="contact-section section-pad" aria-labelledby="contact-title">
           <div className="contact-heading" data-reveal>
-            <p className="section-kicker">Start a project</p>
-            <h2 id="contact-title">Make your next website<br /><em>impossible to ignore.</em></h2>
-            <p>You do not need a perfect brief. Tell us where you are and what the next chapter needs to do.</p>
+            <p className="section-kicker">Talk to us</p>
+            <h2 id="contact-title">Need a better company website?<br /><em>Let’s make the right one.</em></h2>
+            <p>You do not need a perfect brief. Tell us what the company does, what the current website is missing, and the budget you are comfortable with. We will recommend a practical scope.</p>
           </div>
           <form onSubmit={submitInquiry} noValidate data-reveal>
             <label>
@@ -293,16 +305,16 @@ export default function MarvetoExperience() {
               <input value={inquiry.company} onChange={(e) => field('company', e.target.value)} placeholder="Your company" />
             </label>
             <label>
-              <span>Investment range *</span>
+              <span>Working budget *</span>
               <select value={inquiry.budget} onChange={(e) => field('budget', e.target.value)} aria-invalid={!!errors.budget} aria-describedby="budget-error">
                 <option value="">Choose a range</option>
-                <option>$10k–$25k</option><option>$25k–$50k</option><option>$50k–$100k</option><option>$100k+</option>
+                <option>Under $5k</option><option>$5k–$10k</option><option>$10k–$25k</option><option>$25k+</option><option>Not sure yet</option>
               </select>
               <small id="budget-error">{errors.budget}</small>
             </label>
             <label className="form-wide">
-              <span>What are we making? *</span>
-              <textarea value={inquiry.brief} onChange={(e) => field('brief', e.target.value)} aria-invalid={!!errors.brief} aria-describedby="brief-error" rows={4} placeholder="The ambition, the problem, and what success should feel like…" />
+              <span>What should the website help your company do? *</span>
+              <textarea value={inquiry.brief} onChange={(e) => field('brief', e.target.value)} aria-invalid={!!errors.brief} aria-describedby="brief-error" rows={4} placeholder="Explain the business, build trust, generate inquiries, support a launch…" />
               <small id="brief-error">{errors.brief}</small>
             </label>
             <div className="form-actions form-wide">
@@ -313,7 +325,7 @@ export default function MarvetoExperience() {
           </form>
           <footer>
             <a className="footer-wordmark" href="#index">marveto<span>°</span></a>
-            <p>Strategy · Design · Creative development</p>
+            <p>Company websites · Strategy · Design · Development</p>
             <a href={`mailto:${siteConfig.contactEmail}`}>{siteConfig.contactEmail}</a>
             <p>©2026 Marveto. Original work only.</p>
           </footer>
@@ -330,7 +342,7 @@ export default function MarvetoExperience() {
             <h3>{activeProject.statement}</h3>
             <p>{activeProject.summary}</p>
             <ul>{activeProject.deliverables.map((item) => <li key={item}>{item}</li>)}</ul>
-            <a href="#contact" onClick={() => setActiveProject(null)}>Build something like this ↘</a>
+            <a href="#contact" onClick={() => setActiveProject(null)}>Discuss a website like this ↘</a>
           </div>
         </div>
       )}

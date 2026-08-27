@@ -2,15 +2,16 @@
 
 ## [Visit the live website →](https://marveto-studio.unity-mandar-3391.chatgpt.site)
 
-An original, immersive website for Marveto—an independent digital studio creating strategy, design, and creative development for ambitious brands.
+An original, immersive website for Marveto—a compact team that plans, designs, and builds clear company websites with practical scope and sensible overhead.
 
 ## Experience
 
 - WebGL hero with a static reduced-motion fallback
-- Three honestly labeled studio concept case studies
+- Three honestly labeled company website concepts
 - Responsive editorial layouts and accessible project overlays
 - Privacy-preserving project inquiry that composes an email locally
 - Original art direction and optimized AVIF/WebP imagery
+- A benefit-led sales story grounded in realistic claims
 
 ## Development
 
