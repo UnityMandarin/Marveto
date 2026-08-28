@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { concepts, tierDefinitions, tierOrder } from './concept-data';
-import { parseExperienceTier, shouldLoadUltimateScene, withExperienceTier } from './concept-tier';
+import { parseExperienceTier, shouldLoadPremiumAtmosphere, shouldLoadUltimateJourney, withExperienceTier } from './concept-tier';
 
 describe('industry concepts', () => {
   it('defines one honest concept for each requested industry', () => {
@@ -16,6 +16,30 @@ describe('industry concepts', () => {
     expect(tierOrder).toEqual(['essential', 'premium', 'ultimate']);
     expect(Object.values(tierDefinitions).map((tier) => tier.label)).toEqual(['Essential', 'Premium', 'Ultimate']);
     expect(JSON.stringify(tierDefinitions)).not.toMatch(/\$\d|guarantee/i);
+  });
+
+  it('defines a distinct five-room Ultimate journey and Premium atmosphere for every concept', () => {
+    expect(concepts.map((concept) => concept.premiumAtmosphere.kind)).toEqual([
+      'network',
+      'architecture',
+      'biomorphic',
+    ]);
+    expect(concepts.map((concept) => concept.ultimateJourney.world)).toEqual([
+      'network',
+      'structure',
+      'biomorphic',
+    ]);
+    for (const concept of concepts) {
+      expect(concept.ultimateJourney.chapters.map((chapter) => chapter.id)).toEqual([
+        'hero',
+        'viewpoint',
+        'capabilities',
+        'process',
+        'package',
+      ]);
+      expect(new Set(concept.ultimateJourney.chapters.map((chapter) => chapter.room)).size).toBe(5);
+      expect(concept.ultimateJourney.chapters.at(-1)?.camera.position[2]).toBeLessThan(-50);
+    }
   });
 });
 
@@ -33,13 +57,16 @@ describe('tier URL behavior', () => {
     }
   });
 
-  it('loads the Ultimate scene only for capable, motion-enabled fine pointers', () => {
-    expect(shouldLoadUltimateScene('essential', false, true, true)).toBe(false);
-    expect(shouldLoadUltimateScene('premium', false, true, true)).toBe(false);
-    expect(shouldLoadUltimateScene('ultimate', true, true, true)).toBe(false);
-    expect(shouldLoadUltimateScene('ultimate', false, false, true)).toBe(false);
-    expect(shouldLoadUltimateScene('ultimate', false, true, false)).toBe(false);
-    expect(shouldLoadUltimateScene('ultimate', false, true, true)).toBe(true);
+  it('loads Premium motion without WebGL and Ultimate only for capable fine pointers', () => {
+    expect(shouldLoadPremiumAtmosphere('essential', false)).toBe(false);
+    expect(shouldLoadPremiumAtmosphere('premium', false)).toBe(true);
+    expect(shouldLoadPremiumAtmosphere('premium', true)).toBe(false);
+    expect(shouldLoadPremiumAtmosphere('ultimate', false)).toBe(false);
+    expect(shouldLoadUltimateJourney('essential', false, true, true)).toBe(false);
+    expect(shouldLoadUltimateJourney('premium', false, true, true)).toBe(false);
+    expect(shouldLoadUltimateJourney('ultimate', true, true, true)).toBe(false);
+    expect(shouldLoadUltimateJourney('ultimate', false, false, true)).toBe(false);
+    expect(shouldLoadUltimateJourney('ultimate', false, true, false)).toBe(false);
+    expect(shouldLoadUltimateJourney('ultimate', false, true, true)).toBe(true);
   });
 });
-

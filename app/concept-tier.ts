@@ -15,7 +15,14 @@ export function withExperienceTier(url: string, tier: ExperienceTier): string {
   return `${next.pathname}${next.search}${next.hash}`;
 }
 
-export function shouldLoadUltimateScene(
+export function shouldLoadPremiumAtmosphere(
+  tier: ExperienceTier,
+  reducedMotion: boolean,
+): boolean {
+  return tier === 'premium' && !reducedMotion;
+}
+
+export function shouldLoadUltimateJourney(
   tier: ExperienceTier,
   reducedMotion: boolean,
   finePointer: boolean,
@@ -23,4 +30,3 @@ export function shouldLoadUltimateScene(
 ): boolean {
   return tier === 'ultimate' && !reducedMotion && finePointer && webglAvailable;
 }
-

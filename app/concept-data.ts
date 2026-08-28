@@ -1,6 +1,37 @@
 export type ExperienceTier = 'essential' | 'premium' | 'ultimate';
 
-export type UltimateSceneType = 'network' | 'structure' | 'biomorphic';
+export type AtmosphereKind = 'network' | 'architecture' | 'biomorphic';
+export type UltimateWorldType = 'network' | 'structure' | 'biomorphic';
+export type SceneChapterId = 'hero' | 'viewpoint' | 'capabilities' | 'process' | 'package';
+
+export interface AtmospherePreset {
+  kind: AtmosphereKind;
+  particleCount: number;
+  speed: number;
+  refraction: number;
+}
+
+export interface CameraKeyframe {
+  position: [number, number, number];
+  target: [number, number, number];
+  fov: number;
+  roll?: number;
+}
+
+export interface SceneChapter {
+  id: SceneChapterId;
+  label: string;
+  room: string;
+  camera: CameraKeyframe;
+  light: number;
+}
+
+export interface UltimateJourneyDefinition {
+  world: UltimateWorldType;
+  fog: string;
+  density: number;
+  chapters: SceneChapter[];
+}
 
 export interface TierDefinition {
   id: ExperienceTier;
@@ -43,7 +74,8 @@ export interface Concept {
   glow: string;
   ink: string;
   paper: string;
-  scene: UltimateSceneType;
+  premiumAtmosphere: AtmospherePreset;
+  ultimateJourney: UltimateJourneyDefinition;
   modules: ConceptModule[];
   process: ConceptStep[];
 }
@@ -96,7 +128,19 @@ export const concepts: Concept[] = [
     glow: '#cbd6ff',
     ink: '#050a1e',
     paper: '#e9edff',
-    scene: 'network',
+    premiumAtmosphere: { kind: 'network', particleCount: 72, speed: 0.86, refraction: 0.92 },
+    ultimateJourney: {
+      world: 'network',
+      fog: '#040817',
+      density: 1,
+      chapters: [
+        { id: 'hero', label: 'Network vestibule', room: 'signal field', camera: { position: [0, 0.2, 8], target: [0, 0, 0], fov: 39 }, light: 0.78 },
+        { id: 'viewpoint', label: 'Illuminated portal corridor', room: 'portal corridor', camera: { position: [1.15, -0.1, -7], target: [0, 0.2, -16], fov: 43, roll: -0.025 }, light: 0.92 },
+        { id: 'capabilities', label: 'Data-node chamber', room: 'node chamber', camera: { position: [-1.3, 0.5, -23], target: [0.4, 0, -32], fov: 46, roll: 0.035 }, light: 1 },
+        { id: 'process', label: 'Decision core', room: 'decision core', camera: { position: [0.8, -0.35, -39], target: [-0.2, 0.15, -48], fov: 42, roll: -0.018 }, light: 1.08 },
+        { id: 'package', label: 'Luminous exit', room: 'light aperture', camera: { position: [0, 0.15, -55], target: [0, 0, -65], fov: 38 }, light: 1.2 },
+      ],
+    },
     modules: [
       {
         index: '01',
@@ -145,7 +189,19 @@ export const concepts: Concept[] = [
     glow: '#ffcf9f',
     ink: '#1d1713',
     paper: '#eee6da',
-    scene: 'structure',
+    premiumAtmosphere: { kind: 'architecture', particleCount: 58, speed: 0.68, refraction: 0.48 },
+    ultimateJourney: {
+      world: 'structure',
+      fog: '#17100c',
+      density: 0.88,
+      chapters: [
+        { id: 'hero', label: 'Survey-grid entrance', room: 'survey field', camera: { position: [0, 1.25, 8.5], target: [0, 0.4, 0], fov: 42 }, light: 0.84 },
+        { id: 'viewpoint', label: 'Structural frame corridor', room: 'frame corridor', camera: { position: [-1.1, 0.75, -7], target: [0.5, 0.25, -16], fov: 47, roll: 0.018 }, light: 0.94 },
+        { id: 'capabilities', label: 'Exploded floor-plate atrium', room: 'plate atrium', camera: { position: [1.45, 1.4, -23], target: [0, 0.2, -32], fov: 50, roll: -0.028 }, light: 1.06 },
+        { id: 'process', label: 'Delivery gallery', room: 'delivery hall', camera: { position: [-0.9, 0.4, -39], target: [0.3, 0.1, -48], fov: 45, roll: 0.02 }, light: 1 },
+        { id: 'package', label: 'Handover aperture', room: 'handover light', camera: { position: [0, 0.8, -55], target: [0, 0.35, -65], fov: 40 }, light: 1.18 },
+      ],
+    },
     modules: [
       {
         index: '01',
@@ -194,7 +250,19 @@ export const concepts: Concept[] = [
     glow: '#dff6f1',
     ink: '#12202a',
     paper: '#edf1ee',
-    scene: 'biomorphic',
+    premiumAtmosphere: { kind: 'biomorphic', particleCount: 64, speed: 0.52, refraction: 0.72 },
+    ultimateJourney: {
+      world: 'biomorphic',
+      fog: '#09171d',
+      density: 0.82,
+      chapters: [
+        { id: 'hero', label: 'Luminous care entrance', room: 'care vestibule', camera: { position: [0, 0.15, 8], target: [0, 0, 0], fov: 40 }, light: 0.82 },
+        { id: 'viewpoint', label: 'Translucent biomorphic passage', room: 'membrane passage', camera: { position: [1.1, 0.45, -7], target: [-0.4, 0, -16], fov: 44, roll: -0.022 }, light: 0.94 },
+        { id: 'capabilities', label: 'Orbiting pathway chamber', room: 'pathway chamber', camera: { position: [-1.3, -0.2, -23], target: [0.2, 0.3, -32], fov: 47, roll: 0.03 }, light: 1.02 },
+        { id: 'process', label: 'Consultation horizon', room: 'consultation room', camera: { position: [0.75, 0.25, -39], target: [0, -0.05, -48], fov: 43, roll: -0.014 }, light: 0.96 },
+        { id: 'package', label: 'Calm exit', room: 'quiet horizon', camera: { position: [0, 0.05, -55], target: [0, 0, -65], fov: 39 }, light: 1.12 },
+      ],
+    },
     modules: [
       {
         index: '01',
@@ -230,4 +298,3 @@ export const concepts: Concept[] = [
 export function getConcept(slug: string): Concept | undefined {
   return concepts.find((concept) => concept.slug === slug);
 }
-

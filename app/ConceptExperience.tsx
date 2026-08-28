@@ -5,9 +5,10 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { assetPath, sitePath } from './asset-path';
 import { Concept, ExperienceTier, tierDefinitions, tierOrder } from './concept-data';
-import { parseExperienceTier, shouldLoadUltimateScene, withExperienceTier } from './concept-tier';
+import { parseExperienceTier, shouldLoadPremiumAtmosphere, shouldLoadUltimateJourney, withExperienceTier } from './concept-tier';
 
 const UltimateScene = lazy(() => import('./UltimateScene'));
+const PremiumAtmosphere = lazy(() => import('./PremiumAtmosphere'));
 
 function mediaMatches(query: string): boolean {
   return typeof window !== 'undefined' && window.matchMedia(query).matches;
@@ -35,6 +36,7 @@ function ConceptPicture({ concept, eager = false }: { concept: Concept; eager?: 
 
 export default function ConceptExperience({ concept }: { concept: Concept }) {
   const root = useRef<HTMLDivElement>(null);
+  const preservedScroll = useRef<number | null>(null);
   const [tier, setTier] = useState<ExperienceTier>(() => (
     typeof window === 'undefined' ? 'premium' : parseExperienceTier(window.location.search)
   ));
@@ -42,7 +44,10 @@ export default function ConceptExperience({ concept }: { concept: Concept }) {
   const [finePointer, setFinePointer] = useState(() => mediaMatches('(pointer: fine)'));
   const [hasWebgl] = useState(() => webglAvailable());
   const selectedTier = tierDefinitions[tier];
-  const showUltimate = shouldLoadUltimateScene(tier, reducedMotion, finePointer, hasWebgl);
+  const showUltimate = shouldLoadUltimateJourney(tier, reducedMotion, finePointer, hasWebgl);
+  const showAtmosphere = shouldLoadPremiumAtmosphere(tier, reducedMotion) || (
+    tier === 'ultimate' && !showUltimate && !reducedMotion
+  );
 
   useEffect(() => {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -109,7 +114,15 @@ export default function ConceptExperience({ concept }: { concept: Concept }) {
     return () => context.revert();
   }, [tier, reducedMotion]);
 
+  useLayoutEffect(() => {
+    if (preservedScroll.current === null) return;
+    window.scrollTo({ top: preservedScroll.current, behavior: 'auto' });
+    preservedScroll.current = null;
+  }, [tier]);
+
   const chooseTier = (nextTier: ExperienceTier) => {
+    if (nextTier === tier) return;
+    if (typeof window !== 'undefined') preservedScroll.current = window.scrollY;
     setTier(nextTier);
     if (typeof window !== 'undefined') {
       window.history.replaceState({}, '', withExperienceTier(window.location.href, nextTier));
@@ -142,11 +155,33 @@ export default function ConceptExperience({ concept }: { concept: Concept }) {
         '--concept-glow': concept.glow,
         '--concept-ink': concept.ink,
         '--concept-paper': concept.paper,
+        '--atmosphere-refraction': concept.premiumAtmosphere.refraction,
       } as React.CSSProperties}
     >
       <a className="concept-skip" href="#concept-main">Skip to content</a>
       <div className="concept-progress" aria-hidden="true"><span /></div>
       <div className="concept-cursor" aria-hidden="true"><span>{tier === 'ultimate' ? 'Explore' : 'View'}</span></div>
+      <div className="concept-world" aria-hidden="true">
+        {showAtmosphere && (
+          <Suspense fallback={null}>
+            <PremiumAtmosphere preset={concept.premiumAtmosphere} accent={concept.accent} glow={concept.glow} />
+          </Suspense>
+        )}
+        {showUltimate && (
+          <Suspense fallback={null}>
+            <UltimateScene journey={concept.ultimateJourney} accent={concept.accent} glow={concept.glow} />
+          </Suspense>
+        )}
+        <div className="concept-world__light" />
+        <div className="concept-world__grain" />
+      </div>
+      {showUltimate && (
+        <ol className="journey-rail" aria-hidden="true">
+          {concept.ultimateJourney.chapters.map((chapter, index) => (
+            <li key={chapter.id} data-rail-chapter={chapter.id}><span>0{index + 1}</span><i /> <p>{chapter.label}</p></li>
+          ))}
+        </ol>
+      )}
 
       <header className="concept-header">
         <a className="concept-header__back" href={sitePath('/#work')} aria-label="Back to Marveto examples">marveto<span>°</span></a>
@@ -155,14 +190,9 @@ export default function ConceptExperience({ concept }: { concept: Concept }) {
       </header>
 
       <main id="concept-main">
-        <section className="concept-hero" aria-labelledby="concept-title">
+        <section className="concept-hero" aria-labelledby="concept-title" data-journey-chapter="hero">
           <div className="concept-hero__media" aria-hidden="true">
             <ConceptPicture concept={concept} eager />
-            {showUltimate && (
-              <Suspense fallback={null}>
-                <UltimateScene scene={concept.scene} accent={concept.accent} glow={concept.glow} />
-              </Suspense>
-            )}
             <div className="concept-hero__wash" />
             <div className="concept-hero__grid" />
           </div>
@@ -209,7 +239,7 @@ export default function ConceptExperience({ concept }: { concept: Concept }) {
           )}
         </section>
 
-        <section className="concept-statement concept-section" aria-labelledby="statement-title">
+        <section className="concept-statement concept-section" aria-labelledby="statement-title" data-journey-chapter="viewpoint">
           <div className="concept-orbit" aria-hidden="true"><span /><i /></div>
           <p className="concept-kicker">Point of view</p>
           <h2 id="statement-title" data-concept-reveal>{concept.statement}</h2>
@@ -219,7 +249,7 @@ export default function ConceptExperience({ concept }: { concept: Concept }) {
           </div>
         </section>
 
-        <section id="capabilities" className="concept-capabilities concept-section" aria-labelledby="capabilities-title">
+        <section id="capabilities" className="concept-capabilities concept-section" aria-labelledby="capabilities-title" data-journey-chapter="capabilities">
           <div className="concept-section__heading" data-concept-reveal>
             <p className="concept-kicker">The experience</p>
             <h2 id="capabilities-title">Clear by design.<br /><em>Built around the decision.</em></h2>
@@ -245,7 +275,7 @@ export default function ConceptExperience({ concept }: { concept: Concept }) {
           </div>
         </section>
 
-        <section id="process" className="concept-process concept-section" aria-labelledby="process-title">
+        <section id="process" className="concept-process concept-section" aria-labelledby="process-title" data-journey-chapter="process">
           <div className="concept-section__heading" data-concept-reveal>
             <p className="concept-kicker">How it moves</p>
             <h2 id="process-title">One clear path.<br /><em>No missing steps.</em></h2>
@@ -259,7 +289,7 @@ export default function ConceptExperience({ concept }: { concept: Concept }) {
           </ol>
         </section>
 
-        <section className="concept-packages concept-section" aria-labelledby="packages-title">
+        <section className="concept-packages concept-section" aria-labelledby="packages-title" data-journey-chapter="package">
           <div className="concept-section__heading" data-concept-reveal>
             <p className="concept-kicker">Three levels of craft</p>
             <h2 id="packages-title">The right level.<br /><em>The same clear thinking.</em></h2>
@@ -299,4 +329,3 @@ export default function ConceptExperience({ concept }: { concept: Concept }) {
     </div>
   );
 }
-

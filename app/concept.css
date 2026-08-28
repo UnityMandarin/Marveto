@@ -1,6 +1,8 @@
 .concept-shell {
   --pointer-x: 50vw;
   --pointer-y: 50vh;
+  position: relative;
+  isolation: isolate;
   min-height: 100svh;
   overflow: clip;
   background: var(--concept-paper);
@@ -31,6 +33,83 @@
 
 .concept-progress { position: fixed; z-index: 120; top: 0; left: 0; right: 0; height: 3px; pointer-events: none; }
 .concept-progress span { display: block; width: 100%; height: 100%; transform: scaleX(0); transform-origin: left; background: linear-gradient(90deg, var(--concept-accent), var(--concept-glow), white); }
+
+.concept-world {
+  position: fixed;
+  z-index: 3;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .8s ease;
+}
+.concept-shell[data-tier='premium'] .concept-world,
+.concept-shell[data-tier='ultimate'] .concept-world { opacity: 1; }
+.premium-atmosphere,
+.ultimate-journey,
+.ultimate-journey canvas,
+.concept-world__light,
+.concept-world__grain { position: absolute; inset: 0; width: 100%; height: 100%; }
+.premium-atmosphere { opacity: .78; filter: saturate(1.22) contrast(1.06); }
+.ultimate-journey { opacity: .96; background: radial-gradient(circle at 50% 46%, color-mix(in srgb, var(--concept-accent) 10%, transparent), transparent 58%); }
+.ultimate-journey canvas { display: block; }
+.ultimate-journey[data-failed='true'] { display: none; }
+.concept-world__light {
+  background:
+    radial-gradient(circle at var(--pointer-x) var(--pointer-y), color-mix(in srgb, var(--concept-glow) 23%, transparent), transparent 28%),
+    linear-gradient(112deg, transparent 28%, color-mix(in srgb, var(--concept-accent) 12%, transparent) 46%, transparent 64%);
+  mix-blend-mode: screen;
+  opacity: .8;
+  animation: concept-light-drift 10s ease-in-out infinite alternate;
+}
+.concept-shell[data-tier='ultimate'] .concept-world__light { opacity: .48; }
+.concept-world__grain {
+  background-image: var(--noise-image, url('/images/noise.png'));
+  background-size: 180px 180px;
+  opacity: .055;
+  mix-blend-mode: soft-light;
+}
+
+@keyframes concept-light-drift {
+  from { transform: translate3d(-2%, -1%, 0) scale(1.04); }
+  to { transform: translate3d(3%, 2%, 0) scale(1.11); }
+}
+
+.concept-statement > *,
+.concept-capabilities > *,
+.concept-visual-break > *,
+.concept-process > *,
+.concept-packages > *,
+.concept-final > * { position: relative; z-index: 7; }
+
+.journey-rail {
+  position: fixed;
+  z-index: 72;
+  top: 50%;
+  right: 22px;
+  width: 142px;
+  margin: 0;
+  padding: 0;
+  transform: translateY(-50%);
+  color: white;
+  list-style: none;
+  mix-blend-mode: difference;
+  pointer-events: none;
+}
+.journey-rail li { display: grid; grid-template-columns: 17px 24px 1fr; align-items: center; gap: 7px; min-height: 36px; opacity: .35; transition: opacity .35s ease, transform .35s ease; }
+.journey-rail span { font-size: 6px; letter-spacing: .12em; }
+.journey-rail i { width: 18px; height: 1px; background: currentColor; transition: width .35s ease; }
+.journey-rail p { margin: 0; text-transform: uppercase; letter-spacing: .12em; font-size: 6px; line-height: 1.35; }
+.concept-shell:has(.ultimate-journey[data-chapter='hero']) .journey-rail [data-rail-chapter='hero'],
+.concept-shell:has(.ultimate-journey[data-chapter='viewpoint']) .journey-rail [data-rail-chapter='viewpoint'],
+.concept-shell:has(.ultimate-journey[data-chapter='capabilities']) .journey-rail [data-rail-chapter='capabilities'],
+.concept-shell:has(.ultimate-journey[data-chapter='process']) .journey-rail [data-rail-chapter='process'],
+.concept-shell:has(.ultimate-journey[data-chapter='package']) .journey-rail [data-rail-chapter='package'] { opacity: 1; transform: translateX(-7px); }
+.concept-shell:has(.ultimate-journey[data-chapter='hero']) .journey-rail [data-rail-chapter='hero'] i,
+.concept-shell:has(.ultimate-journey[data-chapter='viewpoint']) .journey-rail [data-rail-chapter='viewpoint'] i,
+.concept-shell:has(.ultimate-journey[data-chapter='capabilities']) .journey-rail [data-rail-chapter='capabilities'] i,
+.concept-shell:has(.ultimate-journey[data-chapter='process']) .journey-rail [data-rail-chapter='process'] i,
+.concept-shell:has(.ultimate-journey[data-chapter='package']) .journey-rail [data-rail-chapter='package'] i { width: 27px; }
 
 .concept-header {
   position: fixed;
@@ -63,11 +142,9 @@
   background: var(--concept-ink);
   color: white;
 }
-.concept-hero__media, .concept-hero__media picture, .concept-hero__media img, .ultimate-scene { position: absolute; inset: 0; width: 100%; height: 100%; }
+.concept-hero__media, .concept-hero__media picture, .concept-hero__media img { position: absolute; inset: 0; width: 100%; height: 100%; }
 .concept-hero__media picture { z-index: 0; transform: scale(1.01); }
-.concept-hero__media img { object-fit: cover; filter: saturate(.88) contrast(1.04); }
-.ultimate-scene { z-index: 2; pointer-events: none; }
-.ultimate-scene canvas { display: block; width: 100%; height: 100%; }
+.concept-hero__media img { object-fit: cover; filter: saturate(.88) contrast(1.04); transition: filter .8s ease, opacity .8s ease; }
 .concept-hero__wash { position: absolute; z-index: 3; inset: 0; background: linear-gradient(180deg, rgba(4,7,16,.18), rgba(4,7,16,.04) 38%, rgba(4,7,16,.42)), radial-gradient(circle at 50% 52%, transparent 8%, rgba(3,5,13,.2) 72%); }
 .concept-hero__grid { position: absolute; z-index: 4; inset: 0; opacity: .25; background-image: linear-gradient(rgba(255,255,255,.12) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.12) 1px, transparent 1px); background-size: 9vw 9vw; mask-image: linear-gradient(to bottom, transparent 5%, black 35%, transparent 92%); }
 .concept-hero__copy { position: relative; z-index: 6; width: min(1320px, 93vw); padding-top: 7vh; text-align: center; }
@@ -86,9 +163,16 @@
 .concept-shell[data-tier='essential'] .concept-hero__grid { display: none; }
 .concept-shell[data-tier='essential'] .concept-hero__media img { filter: saturate(.72) contrast(1.02); }
 .concept-shell[data-tier='essential'] .concept-hero__wash { background: linear-gradient(180deg, rgba(4,7,16,.24), rgba(4,7,16,.06) 55%, rgba(4,7,16,.48)); }
-.concept-shell[data-tier='ultimate'] .concept-hero__media img { filter: saturate(.62) contrast(1.15) brightness(.55); }
+.concept-shell[data-tier='premium'] .concept-hero__media img { filter: saturate(.82) contrast(1.08) brightness(.84); }
+.concept-shell[data-tier='ultimate'] .concept-hero__media img { filter: saturate(.48) contrast(1.18) brightness(.34); opacity: .68; }
 .concept-shell[data-tier='ultimate'] .concept-hero__grid { opacity: .42; background-size: 6vw 6vw; }
 .concept-shell[data-tier='ultimate'] .concept-hero__wash { background: radial-gradient(circle at var(--pointer-x) var(--pointer-y), color-mix(in srgb, var(--concept-accent) 24%, transparent), transparent 28%), linear-gradient(180deg, rgba(3,4,10,.24), rgba(3,4,10,.04) 40%, rgba(3,4,10,.55)); }
+
+.concept-shell[data-tier='premium'] .concept-hero__grid { animation: premium-grid-breathe 8s ease-in-out infinite alternate; }
+@keyframes premium-grid-breathe {
+  from { opacity: .18; transform: scale(1); }
+  to { opacity: .34; transform: scale(1.035); }
+}
 
 .tier-dock {
   position: sticky;
@@ -156,6 +240,16 @@
 .concept-visual-break__copy > div p { max-width: 430px; margin: 18px 0 0; font-size: 13px; line-height: 1.55; color: rgba(255,255,255,.65); }
 .concept-shell[data-tier='ultimate'] .concept-visual-break::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(circle at var(--pointer-x) var(--pointer-y), color-mix(in srgb, var(--concept-glow) 22%, transparent), transparent 24%); mix-blend-mode: screen; }
 
+.concept-shell[data-tier='ultimate'] .concept-statement { background: color-mix(in srgb, var(--concept-paper) 83%, transparent); backdrop-filter: blur(3px) saturate(1.08); }
+.concept-shell[data-tier='ultimate'] .concept-capabilities { background: color-mix(in srgb, var(--concept-ink) 82%, transparent); backdrop-filter: blur(2px) saturate(1.15); }
+.concept-shell[data-tier='ultimate'] .concept-visual-break__image img { opacity: .68; }
+.concept-shell[data-tier='ultimate'] .concept-visual-break__copy { background: color-mix(in srgb, var(--concept-ink) 72%, transparent); backdrop-filter: blur(5px); }
+.concept-shell[data-tier='ultimate'] .concept-process { background: color-mix(in srgb, var(--concept-paper) 84%, transparent); backdrop-filter: blur(3px); }
+.concept-shell[data-tier='ultimate'] .concept-packages { background: color-mix(in srgb, var(--concept-paper) 81%, transparent); backdrop-filter: blur(4px); }
+.concept-shell[data-tier='ultimate'] .concept-final { background: color-mix(in srgb, var(--concept-ink) 78%, transparent); backdrop-filter: blur(2px); }
+.concept-shell[data-tier='ultimate'] .concept-module-grid article,
+.concept-shell[data-tier='ultimate'] .package-grid button { backdrop-filter: blur(12px); }
+
 .concept-process { background: color-mix(in srgb, var(--concept-paper) 88%, white); }
 .concept-process ol { margin: 0; padding: 0; list-style: none; border-top: 1px solid color-mix(in srgb, var(--concept-ink) 24%, transparent); }
 .concept-process li { display: grid; grid-template-columns: .35fr 1.3fr 2fr auto; align-items: center; gap: 28px; padding: 31px 0; border-bottom: 1px solid color-mix(in srgb, var(--concept-ink) 24%, transparent); }
@@ -200,6 +294,7 @@
 }
 
 @media (max-width: 980px) {
+  .journey-rail { display: none; }
   .concept-header { grid-template-columns: 1fr auto; min-height: 62px; }
   .concept-header__identity { display: none; }
   .tier-dock { top: 62px; grid-template-columns: 1fr; gap: 10px; padding-top: 12px; padding-bottom: 12px; }
@@ -260,8 +355,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .concept-shell *, .concept-shell *::before, .concept-shell *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
-  .ultimate-scene, .concept-cursor { display: none !important; }
+  .premium-atmosphere, .ultimate-journey, .concept-world__light, .concept-cursor, .journey-rail { display: none !important; }
   [data-concept-reveal] { opacity: 1 !important; transform: none !important; }
   .concept-hero__media picture { transform: none !important; }
 }
-
