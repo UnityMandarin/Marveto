@@ -8,7 +8,7 @@ An original, immersive website for Marveto—a compact team that plans, designs,
 
 - WebGL hero with a static reduced-motion fallback
 - Three honestly labeled company website concepts
-- Responsive editorial layouts and accessible project overlays
+- Responsive editorial layouts and accessible industry concept pages
 - Privacy-preserving project inquiry that composes an email locally
 - Original art direction and optimized AVIF/WebP imagery
 - A benefit-led sales story grounded in realistic claims
@@ -31,6 +31,8 @@ pnpm run build:pages
 ```
 
 The main branch deploys the static GitHub Pages build automatically. The Pages entrypoint reuses the same React experience, styles, imagery, fonts, GSAP motion, OGL canvas, and privacy-preserving inquiry flow as the primary application.
+
+The three homepage examples open full industry concept pages for technology, construction, and medical organizations. Each route can be previewed at Essential, Premium, or Ultimate quality through a shareable `?tier=` parameter; Ultimate adds a lazy-loaded, industry-specific OGL scene.
 
 ## Content
 

@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { assetPath } from './asset-path';
+import { assetPath, sitePath } from './asset-path';
 import HeroCanvas from './HeroCanvas';
 import { buildMailto, formatInquiry, Inquiry, InquiryErrors, validateInquiry } from './inquiry';
 import { benefits, process, Project, projects, services, siteConfig } from './site-data';
@@ -22,9 +22,7 @@ function ProjectPicture({ project }: { project: Project }) {
 
 export default function MarvetoExperience() {
   const root = useRef<HTMLDivElement>(null);
-  const dialogClose = useRef<HTMLButtonElement>(null);
   const [loading, setLoading] = useState(true);
-  const [activeProject, setActiveProject] = useState<Project | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [inquiry, setInquiry] = useState<Inquiry>(emptyInquiry);
   const [errors, setErrors] = useState<InquiryErrors>({});
@@ -33,6 +31,22 @@ export default function MarvetoExperience() {
   useEffect(() => {
     const timer = window.setTimeout(() => setLoading(false), 1250);
     return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const concept = params.get('concept');
+    const tier = params.get('tier');
+    if (!concept || !tier) return;
+    const project = projects.find((item) => item.slug === concept);
+    if (!project) return;
+    const frame = window.requestAnimationFrame(() => {
+      setInquiry((current) => current.brief ? current : {
+        ...current,
+        brief: `We would like to discuss the ${project.title} ${project.sector.split(' · ')[0].toLowerCase()} concept at the ${tier} level.`,
+      });
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, []);
 
   useEffect(() => {
@@ -53,22 +67,6 @@ export default function MarvetoExperience() {
       window.removeEventListener('pointermove', updateCursor);
     };
   }, []);
-
-  useEffect(() => {
-    if (!activeProject) return;
-    const previous = document.activeElement as HTMLElement | null;
-    document.body.classList.add('no-scroll');
-    dialogClose.current?.focus();
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setActiveProject(null);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => {
-      document.body.classList.remove('no-scroll');
-      window.removeEventListener('keydown', onKey);
-      previous?.focus();
-    };
-  }, [activeProject]);
 
   useLayoutEffect(() => {
     if (!root.current || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -213,7 +211,7 @@ export default function MarvetoExperience() {
           <div className="project-grid">
             {projects.map((project, index) => (
               <article className={`project-card project-${project.slug}`} key={project.slug} data-reveal>
-                <button type="button" onClick={() => setActiveProject(project)} aria-label={`View ${project.title} concept`}>
+                <a className="project-link" href={sitePath(`/concepts/${project.slug}/`)} aria-label={`View ${project.title} concept page`}>
                   <div className="project-image"><ProjectPicture project={project} /><span className="project-lens">Open<br />concept</span></div>
                   <div className="project-caption">
                     <div><span>{project.index}</span><p>{project.sector}</p></div>
@@ -221,7 +219,7 @@ export default function MarvetoExperience() {
                     <p>{project.statement}</p>
                     <span className="project-arrow">↗</span>
                   </div>
-                </button>
+                </a>
                 {index === 0 && <p className="project-aside">Business first. Built with craft.</p>}
               </article>
             ))}
@@ -333,20 +331,6 @@ export default function MarvetoExperience() {
         </section>
       </main>
 
-      {activeProject && (
-        <div className="project-dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
-          <button ref={dialogClose} className="dialog-close" type="button" onClick={() => setActiveProject(null)}>Close ×</button>
-          <div className="dialog-image"><ProjectPicture project={activeProject} /></div>
-          <div className="dialog-copy" style={{ '--project-accent': activeProject.accent, '--project-surface': activeProject.surface } as React.CSSProperties}>
-            <p>{activeProject.sector}</p>
-            <h2 id="dialog-title">{activeProject.title}</h2>
-            <h3>{activeProject.statement}</h3>
-            <p>{activeProject.summary}</p>
-            <ul>{activeProject.deliverables.map((item) => <li key={item}>{item}</li>)}</ul>
-            <a href="#contact" onClick={() => setActiveProject(null)}>Discuss a website like this ↘</a>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

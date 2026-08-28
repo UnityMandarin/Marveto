@@ -12,5 +12,13 @@ export default defineConfig({
   build: {
     outDir: fileURLToPath(new URL('./dist-pages', import.meta.url)),
     emptyOutDir: true,
+    rollupOptions: {
+      input: {
+        index: fileURLToPath(new URL('./github-pages-src/index.html', import.meta.url)),
+        axiom: fileURLToPath(new URL('./github-pages-src/concepts/axiom/index.html', import.meta.url)),
+        serein: fileURLToPath(new URL('./github-pages-src/concepts/serein/index.html', import.meta.url)),
+        forma: fileURLToPath(new URL('./github-pages-src/concepts/forma/index.html', import.meta.url)),
+      },
+    },
   },
 });

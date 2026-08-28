@@ -141,14 +141,14 @@ em { font-family: var(--font-editorial), Georgia, serif; font-weight: 500; }
 .project-grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: clamp(42px, 7vw, 110px) clamp(18px, 3.4vw, 54px); }
 .project-card { position: relative; min-width: 0; }
 .project-card:first-child { grid-column: 1 / -1; width: 82%; }
-.project-card button { display: block; width: 100%; padding: 0; border: 0; background: none; text-align: left; cursor: pointer; }
+.project-link { display: block; width: 100%; padding: 0; text-align: left; cursor: pointer; }
 .project-image { position: relative; overflow: hidden; aspect-ratio: 16 / 9; background: #ccc; }
 .project-card:not(:first-child) .project-image { aspect-ratio: 4 / 5; }
 .project-image picture, .project-image img { width: 100%; height: 100%; }
 .project-image img { object-fit: cover; transform: scale(1.01); transition: transform 1s cubic-bezier(.2,.7,.2,1), filter .7s ease; }
-.project-card button:hover img { transform: scale(1.055); filter: saturate(1.08); }
+.project-link:hover img { transform: scale(1.055); filter: saturate(1.08); }
 .project-lens { position: absolute; z-index: 2; top: 0; left: 0; width: 92px; aspect-ratio: 1; border-radius: 50%; display: grid; place-content: center; text-align: center; background: rgba(255,255,255,.9); color: var(--ink); font-size: 10px; line-height: 1.15; text-transform: uppercase; letter-spacing: .08em; transform: translate(-120%, -120%); transition: transform .35s ease; pointer-events: none; }
-.project-card button:hover .project-lens { transform: translate(24px, 24px); }
+.project-link:hover .project-lens { transform: translate(24px, 24px); }
 .project-caption { display: grid; grid-template-columns: 1.1fr 1.2fr 2fr auto; gap: 22px; align-items: end; padding-top: 16px; border-bottom: 1px solid var(--line); padding-bottom: 18px; }
 .project-caption > div { display: flex; align-items: baseline; gap: 16px; }
 .project-caption span, .project-caption p { font-size: 11px; margin: 0; }
@@ -217,27 +217,12 @@ em { font-family: var(--font-editorial), Georgia, serif; font-weight: 500; }
 .contact-section footer p, .contact-section footer a:not(.footer-wordmark) { margin: 0; font-size: 10px; line-height: 1.5; }
 .footer-wordmark { font-size: clamp(52px, 8vw, 120px); line-height: .75; letter-spacing: -.08em; }
 
-.project-dialog { position: fixed; z-index: 500; inset: 0; display: grid; grid-template-columns: 1.35fr 1fr; background: var(--ink); color: white; animation: dialog-in .55s cubic-bezier(.2,.7,.2,1) both; }
-@keyframes dialog-in { from { opacity: 0; transform: translateY(24px); } }
-.dialog-close { position: absolute; z-index: 3; top: 20px; right: 20px; border: 1px solid rgba(255,255,255,.45); border-radius: 999px; padding: 12px 17px; background: rgba(17,17,17,.7); color: white; cursor: pointer; backdrop-filter: blur(10px); }
-.dialog-image { min-height: 100svh; overflow: hidden; }
-.dialog-image picture, .dialog-image img { width: 100%; height: 100%; }
-.dialog-image img { object-fit: cover; }
-.dialog-copy { display: flex; flex-direction: column; justify-content: center; padding: clamp(42px, 6vw, 92px); background: var(--project-surface); }
-.dialog-copy > p:first-child { text-transform: uppercase; letter-spacing: .14em; font-size: 9px; color: var(--project-accent); }
-.dialog-copy h2 { margin: 22px 0 0; font-size: clamp(72px, 8vw, 130px); line-height: .72; letter-spacing: -.08em; font-weight: 500; }
-.dialog-copy h3 { margin: 42px 0 14px; font-family: var(--font-editorial), Georgia, serif; font-size: 32px; font-weight: 500; }
-.dialog-copy > p:not(:first-child) { max-width: 520px; line-height: 1.55; color: rgba(255,255,255,.68); }
-.dialog-copy ul { margin: 36px 0 60px; padding: 0; list-style: none; border-top: 1px solid rgba(255,255,255,.24); }
-.dialog-copy li { padding: 11px 0; border-bottom: 1px solid rgba(255,255,255,.24); text-transform: uppercase; letter-spacing: .1em; font-size: 8px; }
-.dialog-copy a { align-self: flex-start; border-bottom: 1px solid currentColor; padding-bottom: 4px; color: var(--project-accent); }
-
 .cursor { display: none; }
 
 @media (pointer: fine) {
   .cursor { position: fixed; z-index: 800; top: 0; left: 0; display: grid; place-items: center; width: 18px; height: 18px; margin: -9px 0 0 -9px; border: 1px solid white; border-radius: 50%; mix-blend-mode: difference; pointer-events: none; transition: width .25s ease, height .25s ease, margin .25s ease; }
   .cursor span { opacity: 0; font-size: 8px; text-transform: uppercase; letter-spacing: .1em; }
-  .project-card:has(button:hover) ~ .cursor { width: 70px; height: 70px; }
+  .project-link:hover .project-lens { width: 106px; }
 }
 
 @media (max-width: 900px) {
@@ -272,9 +257,6 @@ em { font-family: var(--font-editorial), Georgia, serif; font-weight: 500; }
   .process-section li p { grid-column: 2 / -1; }
   .contact-section footer { grid-template-columns: 1fr 1fr; }
   .footer-wordmark { grid-column: 1 / -1; margin-bottom: 30px; }
-  .project-dialog { grid-template-columns: 1fr; overflow-y: auto; }
-  .dialog-image { min-height: 54svh; }
-  .dialog-copy { min-height: 60svh; }
 }
 
 @media (max-width: 620px) {
@@ -306,8 +288,6 @@ em { font-family: var(--font-editorial), Georgia, serif; font-weight: 500; }
   .form-actions p { flex-basis: 100%; text-align: left; }
   .contact-section footer { grid-template-columns: 1fr; }
   .footer-wordmark { grid-column: 1; }
-  .dialog-image { min-height: 43svh; }
-  .dialog-copy { padding: 54px 22px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
