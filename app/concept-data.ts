@@ -1,7 +1,7 @@
 export type ExperienceTier = 'essential' | 'premium' | 'ultimate';
 
 export type AtmosphereKind = 'network' | 'architecture' | 'biomorphic';
-export type UltimateWorldType = 'network' | 'structure' | 'biomorphic';
+export type UltimateEnvironmentMode = 'signal' | 'monolith' | 'membrane';
 export type SceneChapterId = 'hero' | 'viewpoint' | 'capabilities' | 'process' | 'package';
 
 export interface AtmospherePreset {
@@ -11,25 +11,19 @@ export interface AtmospherePreset {
   refraction: number;
 }
 
-export interface CameraKeyframe {
-  position: [number, number, number];
-  target: [number, number, number];
-  fov: number;
-  roll?: number;
-}
-
 export interface SceneChapter {
   id: SceneChapterId;
   label: string;
-  room: string;
-  camera: CameraKeyframe;
-  light: number;
+  travel: number;
+  atmosphere: number;
 }
 
 export interface UltimateJourneyDefinition {
-  world: UltimateWorldType;
+  mode: UltimateEnvironmentMode;
   fog: string;
-  density: number;
+  focalPoint: [number, number];
+  exposure: number;
+  depth: number;
   chapters: SceneChapter[];
 }
 
@@ -102,9 +96,9 @@ export const tierDefinitions: Record<ExperienceTier, TierDefinition> = {
   ultimate: {
     id: 'ultimate',
     label: 'Ultimate',
-    shortLabel: 'Interactive world',
-    description: 'A flagship digital experience with a bespoke real-time 3D scene, shaders, and deeper interactive storytelling.',
-    capabilities: ['Everything in Premium', 'Bespoke OGL 3D scene', 'Real-time shader effects', 'Advanced pointer choreography'],
+    shortLabel: 'Background journey',
+    description: 'A flagship digital experience where the original artwork opens into a continuous, real-time spatial journey.',
+    capabilities: ['Everything in Premium', 'Continuous shader environment', 'Scroll-controlled spatial depth', 'Adaptive cinematic rendering'],
     motionLevel: 'immersive-3d',
   },
 };
@@ -130,15 +124,17 @@ export const concepts: Concept[] = [
     paper: '#e9edff',
     premiumAtmosphere: { kind: 'network', particleCount: 72, speed: 0.86, refraction: 0.92 },
     ultimateJourney: {
-      world: 'network',
+      mode: 'signal',
       fog: '#040817',
-      density: 1,
+      focalPoint: [0.79, 0.49],
+      exposure: 1.08,
+      depth: 1,
       chapters: [
-        { id: 'hero', label: 'Network vestibule', room: 'signal field', camera: { position: [0, 0.2, 8], target: [0, 0, 0], fov: 39 }, light: 0.78 },
-        { id: 'viewpoint', label: 'Illuminated portal corridor', room: 'portal corridor', camera: { position: [1.15, -0.1, -7], target: [0, 0.2, -16], fov: 43, roll: -0.025 }, light: 0.92 },
-        { id: 'capabilities', label: 'Data-node chamber', room: 'node chamber', camera: { position: [-1.3, 0.5, -23], target: [0.4, 0, -32], fov: 46, roll: 0.035 }, light: 1 },
-        { id: 'process', label: 'Decision core', room: 'decision core', camera: { position: [0.8, -0.35, -39], target: [-0.2, 0.15, -48], fov: 42, roll: -0.018 }, light: 1.08 },
-        { id: 'package', label: 'Luminous exit', room: 'light aperture', camera: { position: [0, 0.15, -55], target: [0, 0, -65], fov: 38 }, light: 1.2 },
+        { id: 'hero', label: 'Surface', travel: 0, atmosphere: 0 },
+        { id: 'viewpoint', label: 'Threshold', travel: 0.18, atmosphere: 0.2 },
+        { id: 'capabilities', label: 'Signal depth', travel: 0.48, atmosphere: 0.58 },
+        { id: 'process', label: 'Current', travel: 0.76, atmosphere: 0.88 },
+        { id: 'package', label: 'Horizon', travel: 1, atmosphere: 1 },
       ],
     },
     modules: [
@@ -191,15 +187,17 @@ export const concepts: Concept[] = [
     paper: '#eee6da',
     premiumAtmosphere: { kind: 'architecture', particleCount: 58, speed: 0.68, refraction: 0.48 },
     ultimateJourney: {
-      world: 'structure',
+      mode: 'monolith',
       fog: '#17100c',
-      density: 0.88,
+      focalPoint: [0.79, 0.29],
+      exposure: 0.96,
+      depth: 0.9,
       chapters: [
-        { id: 'hero', label: 'Survey-grid entrance', room: 'survey field', camera: { position: [0, 1.25, 8.5], target: [0, 0.4, 0], fov: 42 }, light: 0.84 },
-        { id: 'viewpoint', label: 'Structural frame corridor', room: 'frame corridor', camera: { position: [-1.1, 0.75, -7], target: [0.5, 0.25, -16], fov: 47, roll: 0.018 }, light: 0.94 },
-        { id: 'capabilities', label: 'Exploded floor-plate atrium', room: 'plate atrium', camera: { position: [1.45, 1.4, -23], target: [0, 0.2, -32], fov: 50, roll: -0.028 }, light: 1.06 },
-        { id: 'process', label: 'Delivery gallery', room: 'delivery hall', camera: { position: [-0.9, 0.4, -39], target: [0.3, 0.1, -48], fov: 45, roll: 0.02 }, light: 1 },
-        { id: 'package', label: 'Handover aperture', room: 'handover light', camera: { position: [0, 0.8, -55], target: [0, 0.35, -65], fov: 40 }, light: 1.18 },
+        { id: 'hero', label: 'Surface', travel: 0, atmosphere: 0 },
+        { id: 'viewpoint', label: 'Threshold', travel: 0.18, atmosphere: 0.18 },
+        { id: 'capabilities', label: 'Structure', travel: 0.48, atmosphere: 0.55 },
+        { id: 'process', label: 'Passage', travel: 0.76, atmosphere: 0.86 },
+        { id: 'package', label: 'Horizon', travel: 1, atmosphere: 1 },
       ],
     },
     modules: [
@@ -252,15 +250,17 @@ export const concepts: Concept[] = [
     paper: '#edf1ee',
     premiumAtmosphere: { kind: 'biomorphic', particleCount: 64, speed: 0.52, refraction: 0.72 },
     ultimateJourney: {
-      world: 'biomorphic',
+      mode: 'membrane',
       fog: '#09171d',
-      density: 0.82,
+      focalPoint: [0.77, 0.52],
+      exposure: 1,
+      depth: 0.94,
       chapters: [
-        { id: 'hero', label: 'Luminous care entrance', room: 'care vestibule', camera: { position: [0, 0.15, 8], target: [0, 0, 0], fov: 40 }, light: 0.82 },
-        { id: 'viewpoint', label: 'Translucent biomorphic passage', room: 'membrane passage', camera: { position: [1.1, 0.45, -7], target: [-0.4, 0, -16], fov: 44, roll: -0.022 }, light: 0.94 },
-        { id: 'capabilities', label: 'Orbiting pathway chamber', room: 'pathway chamber', camera: { position: [-1.3, -0.2, -23], target: [0.2, 0.3, -32], fov: 47, roll: 0.03 }, light: 1.02 },
-        { id: 'process', label: 'Consultation horizon', room: 'consultation room', camera: { position: [0.75, 0.25, -39], target: [0, -0.05, -48], fov: 43, roll: -0.014 }, light: 0.96 },
-        { id: 'package', label: 'Calm exit', room: 'quiet horizon', camera: { position: [0, 0.05, -55], target: [0, 0, -65], fov: 39 }, light: 1.12 },
+        { id: 'hero', label: 'Surface', travel: 0, atmosphere: 0 },
+        { id: 'viewpoint', label: 'Threshold', travel: 0.18, atmosphere: 0.22 },
+        { id: 'capabilities', label: 'Membrane', travel: 0.48, atmosphere: 0.6 },
+        { id: 'process', label: 'Flow', travel: 0.76, atmosphere: 0.9 },
+        { id: 'package', label: 'Horizon', travel: 1, atmosphere: 1 },
       ],
     },
     modules: [
