@@ -1,124 +1,279 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { Box, Camera, Color, Mesh, Program, Renderer, Sphere, Torus, Transform, Vec3 } from 'ogl';
-import { SceneChapterId, UltimateJourneyDefinition, UltimateWorldType } from './concept-data';
+import { Color, Geometry, Mesh, Program, Renderer, RenderTarget, Texture, Transform } from 'ogl';
+import { UltimateEnvironmentMode, UltimateJourneyDefinition } from './concept-data';
+import { clampJourneyProgress, sampleJourneyProgress } from './ultimate-journey';
 
-const vertex = /* glsl */ `
+const fullscreenVertex = /* glsl */ `
   precision highp float;
   attribute vec3 position;
-  attribute vec3 normal;
-  uniform mat4 modelMatrix;
-  uniform mat4 viewMatrix;
-  uniform mat4 projectionMatrix;
-  uniform float uTime;
-  uniform float uDistort;
-  varying vec3 vNormal;
-  varying vec3 vWorld;
+  attribute vec2 uv;
+  varying vec2 vUv;
 
   void main() {
-    float wave = sin(position.y * 3.7 + position.x * 2.1 + uTime * 0.72) * uDistort;
-    vec3 displaced = position + normal * wave;
-    vec4 world = modelMatrix * vec4(displaced, 1.0);
-    vWorld = world.xyz;
-    vNormal = normalize(mat3(modelMatrix) * normal);
-    gl_Position = projectionMatrix * viewMatrix * world;
+    vUv = uv;
+    gl_Position = vec4(position, 1.0);
   }
 `;
 
-const fragment = /* glsl */ `
+const environmentFragment = /* glsl */ `
   precision highp float;
-  uniform vec3 uColor;
+  uniform sampler2D tMap;
+  uniform vec2 uResolution;
+  uniform vec2 uImage;
+  uniform vec2 uPointer;
+  uniform vec2 uFocal;
+  uniform vec3 uAccent;
   uniform vec3 uGlow;
-  uniform vec3 uFogColor;
-  uniform vec3 cameraPosition;
+  uniform vec3 uFog;
   uniform float uTime;
-  uniform float uOpacity;
-  uniform float uLight;
-  varying vec3 vNormal;
-  varying vec3 vWorld;
+  uniform float uProgress;
+  uniform float uMode;
+  uniform float uExposure;
+  uniform float uDepth;
+  uniform float uQuality;
+  varying vec2 vUv;
+
+  #define PI 3.14159265359
+
+  float saturate(float value) {
+    return clamp(value, 0.0, 1.0);
+  }
+
+  vec2 coverUv(vec2 uv, vec2 screen, vec2 image) {
+    float screenRatio = screen.x / max(screen.y, 1.0);
+    float imageRatio = image.x / max(image.y, 1.0);
+    vec2 scale = screenRatio < imageRatio
+      ? vec2(screenRatio / imageRatio, 1.0)
+      : vec2(1.0, imageRatio / screenRatio);
+    return (uv - 0.5) * scale + 0.5;
+  }
+
+  float hash21(vec2 point) {
+    point = fract(point * vec2(123.34, 456.21));
+    point += dot(point, point + 45.32);
+    return fract(point.x * point.y);
+  }
+
+  float noise21(vec2 point) {
+    vec2 cell = floor(point);
+    vec2 local = fract(point);
+    local = local * local * (3.0 - 2.0 * local);
+    return mix(
+      mix(hash21(cell), hash21(cell + vec2(1.0, 0.0)), local.x),
+      mix(hash21(cell + vec2(0.0, 1.0)), hash21(cell + 1.0), local.x),
+      local.y
+    );
+  }
+
+  float fbm(vec2 point) {
+    float value = 0.0;
+    float amplitude = 0.52;
+    mat2 turn = mat2(0.80, -0.60, 0.60, 0.80);
+    for (int octave = 0; octave < 4; octave++) {
+      value += noise21(point) * amplitude;
+      point = turn * point * 2.03 + 7.17;
+      amplitude *= 0.5;
+    }
+    return value;
+  }
+
+  float boxSdf(vec2 point, vec2 bounds) {
+    vec2 delta = abs(point) - bounds;
+    return length(max(delta, 0.0)) + min(max(delta.x, delta.y), 0.0);
+  }
+
+  vec3 sourceJourney(vec2 uv, float travel, float penetration) {
+    vec3 surface = texture2D(tMap, coverUv(uv, uResolution, uImage)).rgb;
+    vec2 focus = uFocal + uPointer * 0.012 * smoothstep(0.02, 0.7, travel);
+    vec2 delta = uv - focus;
+    float zoom = 1.0 + travel * (2.9 + uDepth * 1.25);
+    float breathing = sin(uTime * 0.24 + length(delta) * 11.0) * 0.003 * travel;
+    vec2 tunnelUv = focus + delta / zoom + normalize(delta + 0.0001) * breathing;
+    vec3 tunnel = texture2D(tMap, coverUv(tunnelUv, uResolution, uImage)).rgb;
+    vec3 depthColor = vec3(0.0);
+    float weight = 0.0;
+
+    for (int layer = 0; layer < 7; layer++) {
+      float layerAmount = float(layer) / 6.0;
+      float layerZoom = 1.0 + travel * (0.8 + layerAmount * 4.6);
+      vec2 layerUv = focus + delta / layerZoom;
+      vec3 sampleColor = texture2D(tMap, coverUv(layerUv, uResolution, uImage)).rgb;
+      float layerWeight = mix(0.32, 1.0, layerAmount);
+      depthColor += sampleColor * layerWeight;
+      weight += layerWeight;
+    }
+
+    depthColor /= max(weight, 0.001);
+    vec3 penetrated = mix(tunnel, depthColor, penetration * 0.56);
+    return mix(surface, penetrated, smoothstep(0.02, 0.46, travel));
+  }
+
+  vec3 signalEnvironment(vec2 uv, float travel, float immersion) {
+    float aspect = uResolution.x / max(uResolution.y, 1.0);
+    vec2 focus = uFocal + uPointer * 0.009;
+    vec2 point = (uv - focus) * vec2(aspect, 1.0);
+    float radius = length(point);
+    float angle = atan(point.y, point.x);
+    float flow = fbm(point * 3.4 + vec2(uTime * 0.035, -uTime * 0.022));
+    float angular = abs(sin(angle * 9.0 + flow * 2.8));
+    float filaments = pow(1.0 - angular, 28.0) * smoothstep(0.04, 0.68, radius);
+    float depthBands = abs(fract(radius * (9.0 + uDepth * 3.0) - travel * 5.0 + flow * 0.25) - 0.5);
+    depthBands = pow(1.0 - depthBands * 2.0, 18.0);
+    float aperture = abs(boxSdf(point, vec2(0.17 + travel * 0.07, 0.29 + travel * 0.12)));
+    float apertureLight = exp(-aperture * (42.0 - travel * 12.0));
+    float core = exp(-radius * (7.5 - travel * 2.5));
+    float mist = fbm(point * 2.2 - vec2(0.0, uTime * 0.018));
+    vec3 color = mix(uFog * 0.52, uAccent * 0.48, saturate(mist * 0.7 + depthBands * 0.42));
+    color += uGlow * (filaments * 0.72 + apertureLight * 1.4 + core * 1.15);
+    color += uAccent * depthBands * 0.36;
+    return color * mix(0.65, 1.2, immersion);
+  }
+
+  vec3 monolithEnvironment(vec2 uv, float travel, float immersion) {
+    float aspect = uResolution.x / max(uResolution.y, 1.0);
+    vec2 point = (uv - vec2(0.5, 0.46)) * vec2(aspect, 1.0);
+    point += uPointer * vec2(0.012, -0.008);
+    float horizon = -0.17 + travel * 0.06;
+    float vertical = point.y - horizon;
+    float perspective = 0.16 / max(abs(vertical), 0.035);
+    float lanes = abs(fract(point.x * perspective * 1.35 + 0.5) - 0.5);
+    lanes = pow(1.0 - lanes * 2.0, 24.0);
+    float plates = abs(fract(perspective * 0.34 - travel * 1.8) - 0.5);
+    plates = pow(1.0 - plates * 2.0, 20.0);
+    float wallPlane = smoothstep(0.72, 0.04, abs(point.x)) * smoothstep(0.7, 0.02, abs(vertical));
+    float opening = exp(-abs(boxSdf(point - vec2(0.23, -0.02), vec2(0.16, 0.28))) * 32.0);
+    float concrete = fbm(point * vec2(3.0, 5.2) + vec2(travel * 0.5, 0.0));
+    float reflection = point.y < horizon ? 0.7 : 0.15;
+    vec3 stone = mix(uFog * 0.78, uGlow * 0.38, concrete * 0.42 + wallPlane * 0.16);
+    vec3 color = stone;
+    color += uGlow * lanes * (0.22 + reflection * 0.45);
+    color += uAccent * plates * (0.26 + immersion * 0.3);
+    color += mix(uGlow, vec3(1.0), 0.35) * opening * 1.05;
+    color *= 0.72 + smoothstep(-0.6, 0.65, point.y) * 0.32;
+    return color;
+  }
+
+  vec3 membraneEnvironment(vec2 uv, float travel, float immersion) {
+    float aspect = uResolution.x / max(uResolution.y, 1.0);
+    vec2 point = (uv - uFocal) * vec2(aspect, 1.0);
+    point += uPointer * 0.01;
+    float drift = uTime * 0.025;
+    float field = fbm(point * 2.5 + vec2(drift, -drift * 0.7));
+    float fine = fbm(point * 6.5 - vec2(drift * 1.8, drift));
+    float folds = abs(sin((point.x * 5.8 + field * 2.7 - travel * 1.2) * PI));
+    folds = pow(1.0 - folds, 5.0);
+    float caustics = abs(sin((point.x + point.y * 0.65 + fine * 0.42) * 24.0 - uTime * 0.12));
+    caustics = pow(1.0 - caustics, 12.0) * smoothstep(0.58, -0.52, point.y);
+    float veil = smoothstep(0.9, 0.12, abs(point.x + sin(point.y * 3.2 + field) * 0.22));
+    float sun = exp(-length(point - vec2(0.04, -0.08)) * (4.8 - travel * 1.2));
+    vec3 color = mix(uFog * 0.6, uAccent * 0.42, field * 0.8);
+    color = mix(color, uGlow * 0.72, veil * 0.28 + fine * 0.12);
+    color += uGlow * folds * (0.46 + immersion * 0.36);
+    color += mix(uAccent, vec3(1.0, 0.72, 0.42), 0.52) * sun * 0.95;
+    color += vec3(0.65, 0.9, 0.92) * caustics * 0.32;
+    return color;
+  }
 
   void main() {
-    vec3 normal = normalize(vNormal);
-    vec3 viewDirection = normalize(cameraPosition - vWorld);
-    vec3 lightDirection = normalize(vec3(-0.45 + sin(uTime * 0.18) * 0.18, 0.78, 0.58));
-    float diffuse = dot(normal, lightDirection) * 0.5 + 0.5;
-    float fresnel = pow(1.0 - abs(dot(normal, viewDirection)), 2.35);
-    float pulse = sin(uTime * 0.82 + vWorld.z * 0.24 + vWorld.y * 1.7) * 0.07 + 0.93;
-    vec3 surface = mix(uColor * (0.22 + diffuse * uLight), uGlow, fresnel * pulse);
-    float distanceToCamera = length(cameraPosition - vWorld);
-    float fog = smoothstep(12.0, 35.0, distanceToCamera);
-    vec3 color = mix(surface, uFogColor, fog * 0.88);
-    float alpha = uOpacity * (0.64 + fresnel * 0.36) * (1.0 - fog * 0.42);
-    gl_FragColor = vec4(color, alpha);
+    float travel = saturate(uProgress);
+    float penetration = smoothstep(0.18, 0.45, travel);
+    float immersion = smoothstep(0.42, 0.82, travel);
+    float horizon = smoothstep(0.78, 1.0, travel);
+    vec2 uv = vUv;
+    vec3 untouched = texture2D(tMap, coverUv(uv, uResolution, uImage)).rgb;
+    vec3 source = sourceJourney(uv, travel, penetration);
+    vec3 environment;
+
+    if (uMode < 0.5) {
+      environment = signalEnvironment(uv, travel, immersion);
+    } else if (uMode < 1.5) {
+      environment = monolithEnvironment(uv, travel, immersion);
+    } else {
+      environment = membraneEnvironment(uv, travel, immersion);
+    }
+
+    float environmentMix = saturate(immersion * 0.78 + horizon * 0.22);
+    vec3 color = mix(source, environment, environmentMix);
+    color += environment * penetration * (1.0 - immersion) * 0.22;
+    color = mix(color, uFog, horizon * 0.14);
+    color *= uExposure * mix(0.94, 1.06, uQuality);
+    float vignette = 1.0 - smoothstep(0.34, 0.86, length((uv - 0.5) * vec2(0.82, 1.0)));
+    color *= mix(0.72, 1.0, vignette);
+    color = mix(untouched, color, smoothstep(0.015, 0.18, travel));
+    gl_FragColor = vec4(color, 1.0);
   }
 `;
 
-type JourneyGeometry = Box | Sphere | Torus;
+const compositeFragment = /* glsl */ `
+  precision highp float;
+  uniform sampler2D tScene;
+  uniform vec2 uResolution;
+  uniform float uTime;
+  uniform float uProgress;
+  uniform float uBloom;
+  varying vec2 vUv;
 
-interface JourneyMesh extends Mesh {
-  journey?: {
-    base: [number, number, number];
-    phase: number;
-    spin?: [number, number, number];
-    float?: number;
-    orbit?: number;
-    orbitSpeed?: number;
-  };
-}
+  float hash21(vec2 point) {
+    point = fract(point * vec2(123.34, 456.21));
+    point += dot(point, point + 45.32);
+    return fract(point.x * point.y);
+  }
 
-interface JourneyMaterial {
-  program: Program;
-  light: { value: number };
-}
+  vec3 toneMap(vec3 color) {
+    const float a = 2.51;
+    const float b = 0.03;
+    const float c = 2.43;
+    const float d = 0.59;
+    const float e = 0.14;
+    return clamp((color * (a * color + b)) / (color * (c * color + d) + e), 0.0, 1.0);
+  }
 
-function lerp(start: number, end: number, amount: number) {
-  return start + (end - start) * amount;
-}
+  void main() {
+    vec2 pixel = 1.0 / max(uResolution, vec2(1.0));
+    vec3 color = texture2D(tScene, vUv).rgb;
+    vec3 blur = vec3(0.0);
+    blur += texture2D(tScene, vUv + pixel * vec2(-2.0, 0.0)).rgb;
+    blur += texture2D(tScene, vUv + pixel * vec2(2.0, 0.0)).rgb;
+    blur += texture2D(tScene, vUv + pixel * vec2(0.0, -2.0)).rgb;
+    blur += texture2D(tScene, vUv + pixel * vec2(0.0, 2.0)).rgb;
+    blur += texture2D(tScene, vUv + pixel * vec2(-1.4, -1.4)).rgb;
+    blur += texture2D(tScene, vUv + pixel * vec2(1.4, -1.4)).rgb;
+    blur += texture2D(tScene, vUv + pixel * vec2(-1.4, 1.4)).rgb;
+    blur += texture2D(tScene, vUv + pixel * vec2(1.4, 1.4)).rgb;
+    blur *= 0.125;
+    vec3 bloom = max(blur - 0.58, 0.0) * (0.55 + smoothstep(0.18, 0.82, uProgress) * 0.45);
+    float effect = smoothstep(0.015, 0.18, uProgress);
+    vec3 processed = toneMap(color + bloom * uBloom);
+    color = mix(color, processed, effect);
+    float grain = hash21(vUv * uResolution + fract(uTime) * 913.7) - 0.5;
+    color += grain * (0.018 - smoothstep(0.0, 1.0, uProgress) * 0.006) * effect;
+    gl_FragColor = vec4(color, 1.0);
+  }
+`;
 
-function smoothstep(amount: number) {
-  const clamped = Math.min(Math.max(amount, 0), 1);
-  return clamped * clamped * (3 - 2 * clamped);
-}
+const modeValues: Record<UltimateEnvironmentMode, number> = {
+  signal: 0,
+  monolith: 1,
+  membrane: 2,
+};
 
-function createMaterial(
-  gl: Renderer['gl'],
-  color: string,
-  glow: string,
-  fog: string,
-  opacity: number,
-  distort: number,
-): JourneyMaterial {
-  const light = { value: 0.9 };
-  const program = new Program(gl, {
-    vertex,
-    fragment,
-    transparent: true,
-    cullFace: false,
-    depthWrite: opacity > 0.8,
-    uniforms: {
-      uTime: { value: 0 },
-      uColor: { value: new Color(color) },
-      uGlow: { value: new Color(glow) },
-      uFogColor: { value: new Color(fog) },
-      uOpacity: { value: opacity },
-      uDistort: { value: distort },
-      uLight: light,
-    },
+function createFullscreenGeometry(gl: Renderer['gl']) {
+  return new Geometry(gl, {
+    position: { size: 3, data: new Float32Array([-1, -1, 0, 3, -1, 0, -1, 3, 0]) },
+    uv: { size: 2, data: new Float32Array([0, 0, 2, 0, 0, 2]) },
   });
-  return { program, light };
-}
-
-function roomDepth(index: number) {
-  return index * -16;
 }
 
 export default function UltimateScene({
   journey,
+  image,
   accent,
   glow,
 }: {
   journey: UltimateJourneyDefinition;
+  image: string;
   accent: string;
   glow: string;
 }) {
@@ -132,9 +287,11 @@ export default function UltimateScene({
     let renderer: Renderer;
     try {
       renderer = new Renderer({
-        alpha: true,
-        antialias: true,
-        dpr: Math.min(window.devicePixelRatio || 1, 1.25),
+        alpha: false,
+        depth: false,
+        stencil: false,
+        antialias: false,
+        dpr: Math.min(window.devicePixelRatio || 1, 1.5),
         powerPreference: 'high-performance',
       });
     } catch {
@@ -146,277 +303,185 @@ export default function UltimateScene({
     gl.canvas.setAttribute('aria-hidden', 'true');
     gl.canvas.setAttribute('role', 'presentation');
     host.appendChild(gl.canvas);
-    gl.clearColor(0, 0, 0, 0);
+    gl.clearColor(0, 0, 0, 1);
 
-    const world = new Transform();
-    const camera = new Camera(gl, { fov: journey.chapters[0].camera.fov, near: 0.08, far: 120 });
-    const cameraTarget = new Vec3();
-    const meshes: JourneyMesh[] = [];
-    const materials = {
-      accent: createMaterial(gl, accent, glow, journey.fog, 0.82, 0.008),
-      glow: createMaterial(gl, glow, '#ffffff', journey.fog, 0.68, 0.014),
-      glass: createMaterial(gl, journey.fog, accent, journey.fog, 0.34, 0.032),
-      solid: createMaterial(gl, accent, glow, journey.fog, 0.94, 0.003),
+    const texture = new Texture(gl, {
+      minFilter: gl.LINEAR,
+      magFilter: gl.LINEAR,
+      generateMipmaps: false,
+      anisotropy: Math.min(renderer.parameters.maxAnisotropy || 1, 4),
+    });
+    const geometry = createFullscreenGeometry(gl);
+    const environmentScene = new Transform();
+    const compositeScene = new Transform();
+    const renderTarget = new RenderTarget(gl, { depth: false, stencil: false });
+    const progressUniform = { value: 0 };
+    const resolutionUniform = { value: [1, 1] };
+    const pointerUniform = { value: [0, 0] };
+    const timeUniform = { value: 0 };
+    const qualityUniform = { value: 1 };
+
+    const environmentProgram = new Program(gl, {
+      vertex: fullscreenVertex,
+      fragment: environmentFragment,
+      depthTest: false,
+      depthWrite: false,
+      cullFace: false,
+      uniforms: {
+        tMap: { value: texture },
+        uResolution: resolutionUniform,
+        uImage: { value: [1448, 1086] },
+        uPointer: pointerUniform,
+        uFocal: { value: journey.focalPoint },
+        uAccent: { value: new Color(accent) },
+        uGlow: { value: new Color(glow) },
+        uFog: { value: new Color(journey.fog) },
+        uTime: timeUniform,
+        uProgress: progressUniform,
+        uMode: { value: modeValues[journey.mode] },
+        uExposure: { value: journey.exposure },
+        uDepth: { value: journey.depth },
+        uQuality: qualityUniform,
+      },
+    });
+    const environmentMesh = new Mesh(gl, { geometry, program: environmentProgram });
+    environmentMesh.setParent(environmentScene);
+
+    const compositeProgram = new Program(gl, {
+      vertex: fullscreenVertex,
+      fragment: compositeFragment,
+      depthTest: false,
+      depthWrite: false,
+      cullFace: false,
+      uniforms: {
+        tScene: { value: renderTarget.texture },
+        uResolution: resolutionUniform,
+        uTime: timeUniform,
+        uProgress: progressUniform,
+        uBloom: { value: 0.72 },
+      },
+    });
+    const compositeMesh = new Mesh(gl, { geometry, program: compositeProgram });
+    compositeMesh.setParent(compositeScene);
+
+    const source = new Image();
+    source.decoding = 'async';
+    let imageReady = false;
+    let readyEmitted = false;
+    source.onload = () => {
+      texture.image = source;
+      imageReady = true;
     };
-    const materialList = Object.values(materials);
-
-    const addMesh = (
-      geometry: JourneyGeometry,
-      material: JourneyMaterial,
-      position: [number, number, number],
-      scale: [number, number, number] = [1, 1, 1],
-      rotation: [number, number, number] = [0, 0, 0],
-      extras: Partial<NonNullable<JourneyMesh['journey']>> = {},
-    ) => {
-      const mesh = new Mesh(gl, { geometry, program: material.program }) as JourneyMesh;
-      mesh.setParent(world);
-      mesh.position.set(position[0], position[1], position[2]);
-      mesh.scale.set(scale[0], scale[1], scale[2]);
-      mesh.rotation.set(rotation[0], rotation[1], rotation[2]);
-      mesh.journey = {
-        base: position,
-        phase: extras.phase ?? meshes.length * 0.71,
-        spin: extras.spin,
-        float: extras.float,
-        orbit: extras.orbit,
-        orbitSpeed: extras.orbitSpeed,
-      };
-      meshes.push(mesh);
-      return mesh;
+    source.onerror = () => {
+      host.dataset.failed = 'true';
+      shell.removeAttribute('data-ultimate-ready');
     };
-
-    const frameVertical = new Box(gl, { width: 0.16, height: 5.5, depth: 0.34 });
-    const frameHorizontal = new Box(gl, { width: 6.5, height: 0.16, depth: 0.34 });
-    const floorRail = new Box(gl, { width: 0.055, height: 0.035, depth: 14 });
-
-    for (let chapterIndex = 0; chapterIndex < journey.chapters.length; chapterIndex += 1) {
-      const z = roomDepth(chapterIndex);
-      for (let rail = -3; rail <= 3; rail += 1) {
-        addMesh(floorRail, materials.glass, [rail * 0.88, -2.72, z - 1.5], [1, 1, 1], [0, 0, 0], { phase: chapterIndex + rail });
-      }
-      if (chapterIndex < journey.chapters.length - 1) {
-        const threshold = z - 8;
-        addMesh(frameVertical, materials.accent, [-3.25, 0, threshold]);
-        addMesh(frameVertical, materials.accent, [3.25, 0, threshold]);
-        addMesh(frameHorizontal, materials.glow, [0, 2.72, threshold]);
-        addMesh(frameHorizontal, materials.glass, [0, -2.72, threshold]);
-      }
-    }
-
-    const createNetworkRoom = (chapterIndex: number) => {
-      const z = roomDepth(chapterIndex);
-      const nodeGeometry = new Sphere(gl, { radius: 0.12, widthSegments: 16, heightSegments: 12 });
-      const glassBlock = new Box(gl, { width: 0.62, height: 0.62, depth: 0.62 });
-      const portalGeometry = new Torus(gl, { radius: 1.45 + chapterIndex * 0.08, tube: 0.055, radialSegments: 18, tubularSegments: 72 });
-      addMesh(portalGeometry, chapterIndex % 2 ? materials.glow : materials.accent, [0, 0.15, z - 1.5], [1, 1, 1], [Math.PI * 0.5, 0, chapterIndex * 0.22], { spin: [0.02, 0.045, 0.08], phase: chapterIndex });
-      addMesh(portalGeometry, materials.glass, [0, 0.15, z - 2], [1.55, 1.55, 1.55], [Math.PI * 0.5, chapterIndex * 0.14, 0], { spin: [0.01, -0.025, -0.04], phase: chapterIndex + 1 });
-      for (let index = 0; index < 9; index += 1) {
-        const angle = (index / 9) * Math.PI * 2;
-        const radius = 1.7 + (index % 3) * 0.48;
-        addMesh(
-          index % 3 === 0 ? glassBlock : nodeGeometry,
-          index % 2 ? materials.glow : materials.accent,
-          [Math.cos(angle) * radius, Math.sin(angle * 1.4) * 1.35, z - 1.6 + Math.sin(angle) * 1.15],
-          index % 3 === 0 ? [0.62, 0.62, 0.62] : [1, 1, 1],
-          [angle * 0.4, angle * 0.3, angle],
-          { orbit: 0.18 + (index % 2) * 0.12, orbitSpeed: 0.12 + index * 0.007, spin: [0.04, 0.08, 0.025], phase: angle },
-        );
-      }
-    };
-
-    const createStructureRoom = (chapterIndex: number) => {
-      const z = roomDepth(chapterIndex);
-      const column = new Box(gl, { width: 0.12, height: 5.2, depth: 0.12 });
-      const slab = new Box(gl, { width: 4.9, height: 0.12, depth: 3.45 });
-      const brace = new Box(gl, { width: 0.08, height: 3.6, depth: 0.08 });
-      [[-2.5, -2.1], [2.5, -2.1], [-2.5, 1.1], [2.5, 1.1]].forEach(([x, depth], index) => {
-        addMesh(column, index % 2 ? materials.glow : materials.accent, [x, 0, z + depth], [1, 1, 1], [0, 0, 0], { phase: chapterIndex + index });
-      });
-      for (let level = 0; level < 6; level += 1) {
-        addMesh(
-          slab,
-          level % 2 ? materials.glass : materials.accent,
-          [(level - 2.5) * 0.08, -1.8 + level * 0.68, z - 1.15],
-          [1, 1, 1],
-          [0, (level - 2.5) * 0.025, 0],
-          { float: 0.09 + level * 0.012, phase: level * 0.7 + chapterIndex },
-        );
-      }
-      addMesh(brace, materials.glow, [-1.65, 0, z - 2.75], [1, 1, 1], [0, 0, -0.72]);
-      addMesh(brace, materials.glow, [1.65, 0, z - 2.75], [1, 1, 1], [0, 0, 0.72]);
-    };
-
-    const createBiomorphicRoom = (chapterIndex: number) => {
-      const z = roomDepth(chapterIndex);
-      const core = new Sphere(gl, { radius: 0.82 + chapterIndex * 0.04, widthSegments: 34, heightSegments: 22 });
-      const cell = new Sphere(gl, { radius: 0.13, widthSegments: 14, heightSegments: 10 });
-      addMesh(core, chapterIndex % 2 ? materials.glow : materials.accent, [0, 0.12, z - 1.8], [1.05, 1.32, 0.86], [0, chapterIndex * 0.18, 0], { spin: [0.025, 0.045, 0.012], float: 0.13, phase: chapterIndex });
-      [1.32, 1.72, 2.12].forEach((radius, index) => {
-        const ring = new Torus(gl, { radius, tube: 0.022 + index * 0.012, radialSegments: 16, tubularSegments: 72 });
-        addMesh(ring, index === 1 ? materials.glow : materials.glass, [0, 0.12, z - 1.8], [1, 1, 1], [Math.PI * (0.18 + index * 0.17), Math.PI * (0.1 + index * 0.11), 0], { spin: [0.035, index % 2 ? -0.06 : 0.055, 0.02], phase: index + chapterIndex });
-      });
-      for (let index = 0; index < 7; index += 1) {
-        const angle = (index / 7) * Math.PI * 2;
-        addMesh(
-          cell,
-          index % 2 ? materials.accent : materials.glow,
-          [Math.cos(angle) * 2.15, Math.sin(angle * 1.35) * 1.3, z - 1.8 + Math.sin(angle) * 0.9],
-          [1, 1, 1],
-          [0, 0, 0],
-          { orbit: 0.24, orbitSpeed: 0.09 + index * 0.009, float: 0.06, phase: angle },
-        );
-      }
-    };
-
-    const roomFactory: Record<UltimateWorldType, (index: number) => void> = {
-      network: createNetworkRoom,
-      structure: createStructureRoom,
-      biomorphic: createBiomorphicRoom,
-    };
-    journey.chapters.forEach((_, index) => roomFactory[journey.world](index));
-
-    const moteGeometry = new Sphere(gl, { radius: 0.035, widthSegments: 8, heightSegments: 6 });
-    const moteCount = Math.round(26 * journey.density);
-    for (let index = 0; index < moteCount; index += 1) {
-      const lane = (index % 7) - 3;
-      const depth = -2 - (index / Math.max(moteCount - 1, 1)) * 66;
-      const moteScale = 0.65 + (index % 3) * 0.22;
-      addMesh(
-        moteGeometry,
-        index % 3 ? materials.glow : materials.accent,
-        [lane * 0.92 + Math.sin(index * 2.1) * 0.36, -2.2 + (index % 6) * 0.82, depth],
-        [moteScale, moteScale, moteScale],
-        [0, 0, 0],
-        { float: 0.12, phase: index * 0.83 },
-      );
-    }
+    source.src = image;
 
     const pointer = { x: 0, y: 0, targetX: 0, targetY: 0 };
     let scrollTarget = 0;
     let scrollSmooth = 0;
-    let chapterStops = journey.chapters.map((_, index) => index / (journey.chapters.length - 1));
-    let activeChapter: SceneChapterId = 'hero';
     let frame = 0;
     let destroyed = false;
     let paused = document.hidden;
+    let previousTime = performance.now();
+    let slowFrameScore = 0;
+    let dpr = renderer.dpr;
+    let chapterStops = journey.chapters.map((_, index) => index / Math.max(journey.chapters.length - 1, 1));
 
-    const measureChapters = () => {
+    const measure = () => {
       const shellTop = shell.getBoundingClientRect().top + window.scrollY;
-      const max = Math.max(shell.scrollHeight - window.innerHeight, 1);
+      const maxScroll = Math.max(shell.scrollHeight - window.innerHeight, 1);
       chapterStops = journey.chapters.map((chapter, index) => {
         const section = shell.querySelector<HTMLElement>(`[data-journey-chapter="${chapter.id}"]`);
-        if (!section) return index / (journey.chapters.length - 1);
+        if (!section) return index / Math.max(journey.chapters.length - 1, 1);
         const sectionTop = section.getBoundingClientRect().top + window.scrollY - shellTop;
-        return Math.min(Math.max(sectionTop / max, 0), 1);
+        return clampJourneyProgress(sectionTop / maxScroll);
       });
       chapterStops[0] = 0;
-      chapterStops[chapterStops.length - 1] = Math.min(chapterStops[chapterStops.length - 1], 0.88);
+      chapterStops[chapterStops.length - 1] = Math.min(chapterStops[chapterStops.length - 1], 0.9);
     };
 
     const updateScroll = () => {
       const shellTop = shell.getBoundingClientRect().top + window.scrollY;
-      const max = Math.max(shell.scrollHeight - window.innerHeight, 1);
-      scrollTarget = Math.min(Math.max((window.scrollY - shellTop) / max, 0), 1);
+      const maxScroll = Math.max(shell.scrollHeight - window.innerHeight, 1);
+      const pageProgress = clampJourneyProgress((window.scrollY - shellTop) / maxScroll);
+      scrollTarget = sampleJourneyProgress(
+        pageProgress,
+        chapterStops,
+        journey.chapters.map((chapter) => chapter.travel),
+      );
     };
 
     const resize = () => {
-      renderer.setSize(host.clientWidth, host.clientHeight);
-      camera.perspective({ aspect: host.clientWidth / Math.max(host.clientHeight, 1) });
-      measureChapters();
+      const width = Math.max(host.clientWidth, 1);
+      const height = Math.max(host.clientHeight, 1);
+      renderer.dpr = dpr;
+      renderer.setSize(width, height);
+      renderTarget.setSize(Math.round(width * dpr), Math.round(height * dpr));
+      resolutionUniform.value = [Math.round(width * dpr), Math.round(height * dpr)];
+      measure();
       updateScroll();
     };
 
     const onPointerMove = (event: PointerEvent) => {
-      pointer.targetX = (event.clientX / Math.max(window.innerWidth, 1) - 0.5) * 0.55;
-      pointer.targetY = (event.clientY / Math.max(window.innerHeight, 1) - 0.5) * 0.38;
-    };
-
-    const keyframeAt = (progress: number) => {
-      let index = 0;
-      for (let stop = 0; stop < chapterStops.length - 1; stop += 1) {
-        if (progress >= chapterStops[stop]) index = stop;
-      }
-      index = Math.min(index, journey.chapters.length - 2);
-      const startStop = chapterStops[index];
-      const endStop = chapterStops[index + 1];
-      const local = smoothstep((progress - startStop) / Math.max(endStop - startStop, 0.001));
-      return { local, from: journey.chapters[index], to: journey.chapters[index + 1] };
+      pointer.targetX = (event.clientX / Math.max(window.innerWidth, 1) - 0.5) * 2;
+      pointer.targetY = (0.5 - event.clientY / Math.max(window.innerHeight, 1)) * 2;
     };
 
     const render = (timeMs: number) => {
       if (destroyed || paused) return;
-      const time = timeMs * 0.001;
-      pointer.x += (pointer.targetX - pointer.x) * 0.04;
-      pointer.y += (pointer.targetY - pointer.y) * 0.04;
-      scrollSmooth += (scrollTarget - scrollSmooth) * 0.07;
-
-      const { local, from, to } = keyframeAt(scrollSmooth);
-      const fromCamera = from.camera;
-      const toCamera = to.camera;
-      const px = lerp(fromCamera.position[0], toCamera.position[0], local) + pointer.x;
-      const py = lerp(fromCamera.position[1], toCamera.position[1], local) - pointer.y;
-      const pz = lerp(fromCamera.position[2], toCamera.position[2], local);
-      const tx = lerp(fromCamera.target[0], toCamera.target[0], local) + pointer.x * 0.28;
-      const ty = lerp(fromCamera.target[1], toCamera.target[1], local) - pointer.y * 0.2;
-      const tz = lerp(fromCamera.target[2], toCamera.target[2], local);
-      camera.position.set(px, py, pz);
-      cameraTarget.set(tx, ty, tz);
-      camera.lookAt(cameraTarget);
-      camera.rotation.z += lerp(fromCamera.roll ?? 0, toCamera.roll ?? 0, local);
-      camera.fov = lerp(fromCamera.fov, toCamera.fov, local);
-      camera.perspective({ aspect: host.clientWidth / Math.max(host.clientHeight, 1) });
-
-      const nextChapter = local > 0.82 ? to : from;
-      if (activeChapter !== nextChapter.id) {
-        activeChapter = nextChapter.id;
-        host.dataset.chapter = activeChapter;
-        host.dataset.room = nextChapter.room;
+      const delta = Math.min(timeMs - previousTime, 100);
+      previousTime = timeMs;
+      if (delta > 26) slowFrameScore += 1;
+      else slowFrameScore = Math.max(slowFrameScore - 2, 0);
+      if (slowFrameScore > 90 && dpr > 1) {
+        dpr = 1;
+        qualityUniform.value = 0.7;
+        compositeProgram.uniforms.uBloom.value = 0.5;
+        slowFrameScore = 0;
+        host.dataset.quality = 'adaptive';
+        resize();
       }
 
-      const light = lerp(from.light, to.light, local);
-      materialList.forEach((material) => {
-        material.program.uniforms.uTime.value = time;
-        material.light.value = light;
-      });
+      pointer.x += (pointer.targetX - pointer.x) * 0.045;
+      pointer.y += (pointer.targetY - pointer.y) * 0.045;
+      scrollSmooth += (scrollTarget - scrollSmooth) * 0.065;
+      pointerUniform.value = [pointer.x, pointer.y];
+      progressUniform.value = scrollSmooth;
+      timeUniform.value = timeMs * 0.001;
+      shell.style.setProperty('--journey-progress', scrollSmooth.toFixed(4));
 
-      meshes.forEach((mesh) => {
-        const motion = mesh.journey;
-        if (!motion) return;
-        const phase = motion.phase;
-        if (motion.spin) {
-          mesh.rotation.x += motion.spin[0] * 0.003;
-          mesh.rotation.y += motion.spin[1] * 0.003;
-          mesh.rotation.z += motion.spin[2] * 0.003;
+      if (imageReady) {
+        renderer.render({ scene: environmentScene, target: renderTarget, clear: true, sort: false, frustumCull: false });
+        renderer.render({ scene: compositeScene, clear: true, sort: false, frustumCull: false });
+        if (!readyEmitted) {
+          readyEmitted = true;
+          host.dataset.ready = 'true';
+          shell.dataset.ultimateReady = 'true';
         }
-        if (motion.float) {
-          mesh.position.y = motion.base[1] + Math.sin(time * 0.52 + phase) * motion.float;
-        }
-        if (motion.orbit) {
-          const angle = time * (motion.orbitSpeed ?? 0.1) + phase;
-          mesh.position.x = motion.base[0] + Math.cos(angle) * motion.orbit;
-          mesh.position.z = motion.base[2] + Math.sin(angle) * motion.orbit;
-        }
-      });
+      }
 
-      renderer.render({ scene: world, camera });
       frame = requestAnimationFrame(render);
     };
 
     const onVisibility = () => {
       paused = document.hidden;
-      if (!paused) frame = requestAnimationFrame(render);
+      if (!paused) {
+        previousTime = performance.now();
+        frame = requestAnimationFrame(render);
+      }
     };
     const onContextLost = (event: Event) => {
       event.preventDefault();
       host.dataset.failed = 'true';
+      shell.removeAttribute('data-ultimate-ready');
       paused = true;
       cancelAnimationFrame(frame);
     };
 
     resize();
     updateScroll();
-    host.dataset.chapter = activeChapter;
-    host.dataset.room = journey.chapters[0].room;
     window.addEventListener('resize', resize);
     window.addEventListener('scroll', updateScroll, { passive: true });
     window.addEventListener('pointermove', onPointerMove, { passive: true });
@@ -432,11 +497,14 @@ export default function UltimateScene({
       window.removeEventListener('pointermove', onPointerMove);
       document.removeEventListener('visibilitychange', onVisibility);
       gl.canvas.removeEventListener('webglcontextlost', onContextLost);
-      materialList.forEach((material) => material.program.remove());
+      shell.removeAttribute('data-ultimate-ready');
+      shell.style.removeProperty('--journey-progress');
+      environmentProgram.remove();
+      compositeProgram.remove();
       gl.canvas.remove();
       gl.getExtension('WEBGL_lose_context')?.loseContext();
     };
-  }, [journey, accent, glow]);
+  }, [journey, image, accent, glow]);
 
   return <div ref={hostRef} className="ultimate-journey" aria-hidden="true" />;
 }
