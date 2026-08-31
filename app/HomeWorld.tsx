@@ -53,7 +53,7 @@ const worldFragment = /* glsl */ `
     if (scene < 4.5) return texture2D(tForma, cover(uv, vec2(1448.0, 1086.0))).rgb;
     if (scene < 5.5) return texture2D(tServices, cover(uv, vec2(1672.0, 938.0))).rgb;
     if (scene < 6.5) return texture2D(tProcess, cover(uv, vec2(1672.0, 938.0))).rgb;
-    return texture2D(tContact, cover(uv, vec2(1672.0, 938.0))).rgb;
+    return texture2D(tContact, cover(uv, vec2(2048.0, 1152.0))).rgb;
   }
 
   float imageMask(vec2 uv, vec4 mask) {
@@ -63,6 +63,7 @@ const worldFragment = /* glsl */ `
   }
 
   vec3 authoredLayer(float scene, vec2 uv, vec4 mask, float exposure) {
+    if (scene < 0.5) return sampleScene(scene, uv) * exposure;
     vec2 focal = mask.xy;
     vec2 baseUv = focal + (uv - focal) / uScale;
     vec2 foregroundUv = focal + (uv - focal) / (uScale + uLayerDepth);

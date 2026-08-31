@@ -84,6 +84,16 @@ describe('home journey', () => {
     expect(sceneForConcept('forma')?.desktopBase).toBe('/images/serein.webp');
   });
 
+  it('keeps the authored pearl hero unmasked and uses the crystal horizon for contact', () => {
+    expect(homeChapters[0].camera).toEqual([1, 1]);
+    expect(homeChapters[0].layerDepth).toBe(0);
+    expect(authoredScenes.surface.desktopBase).toBe('/images/hero-surface-v3.webp');
+    expect(authoredScenes.surface.mobileBase).toBe('/images/hero-surface-mobile-v3.webp');
+    expect(authoredScenes.contact.desktopBase).toBe('/images/scene-contact-v3.webp');
+    expect(authoredScenes.contact.mobileBase).toBe('/images/scene-contact-mobile-v3.webp');
+    expect(authoredScenes.contact.focalPoint).toEqual([0.5, 0.6]);
+  });
+
   it('preserves the Ultimate tier in every homepage concept handoff', () => {
     for (const slug of ['axiom', 'serein', 'forma']) {
       expect(homeUltimateHref(slug)).toBe(`/concepts/${slug}/?tier=ultimate`);

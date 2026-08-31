@@ -51,6 +51,7 @@ em { font-family: var(--font-editorial), Georgia, serif; font-weight: 500; }
 .home-stage { z-index: -1; overflow: hidden; background: #090b11; pointer-events: none; view-transition-name: marveto-world; }
 .home-fallback { opacity: 1; transition: opacity 1s cubic-bezier(.2,.7,.2,1); }
 .site-shell[data-world-ready='true'] .home-fallback { opacity: 0; }
+.site-shell[data-chapter='surface'][data-world-ready='true'] .home-fallback { opacity: 1; }
 .fallback-plate { opacity: 0; transform: scale(1.018); transition: opacity .72s cubic-bezier(.22,.74,.18,1), transform .9s cubic-bezier(.22,.74,.18,1); }
 .fallback-plate img { object-fit: cover; }
 .plate-surface { opacity: 1; transform: scale(1); }
@@ -64,6 +65,7 @@ em { font-family: var(--font-editorial), Georgia, serif; font-weight: 500; }
 .site-shell:not([data-chapter='surface']) .plate-surface { opacity: 0; transform: scale(1.05); }
 .home-world { z-index: 3; opacity: 0; transition: opacity 1s cubic-bezier(.2,.7,.2,1); }
 .home-world[data-ready='true'] { opacity: 1; }
+.site-shell[data-chapter='surface'] .home-world[data-ready='true'] { opacity: 0; }
 .home-world[data-failed='true'], .home-world[data-fallback='true'] { display: none; }
 .home-world canvas { display: block; }
 

@@ -39,7 +39,7 @@ const chapter = (
 });
 
 export const homeChapters: readonly HomeChapterDefinition[] = [
-  chapter('surface', 0, 0.14, [1, 1.045], 0.028),
+  chapter('surface', 0, 0.14, [1, 1], 0),
   chapter('signal', 0.14, 0.27, [1.02, 1.1], 0.038),
   chapter('axiom', 0.27, 0.39, [1.01, 1.075], 0.044, 'axiom'),
   chapter('serein', 0.39, 0.51, [1.015, 1.065], 0.035, 'serein'),
