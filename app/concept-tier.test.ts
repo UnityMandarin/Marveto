@@ -18,16 +18,16 @@ describe('industry concepts', () => {
     expect(JSON.stringify(tierDefinitions)).not.toMatch(/\$\d|guarantee/i);
   });
 
-  it('defines a distinct five-room Ultimate journey and Premium atmosphere for every concept', () => {
+  it('defines one continuous, background-led Ultimate journey for every concept', () => {
     expect(concepts.map((concept) => concept.premiumAtmosphere.kind)).toEqual([
       'network',
       'architecture',
       'biomorphic',
     ]);
-    expect(concepts.map((concept) => concept.ultimateJourney.world)).toEqual([
-      'network',
-      'structure',
-      'biomorphic',
+    expect(concepts.map((concept) => concept.ultimateJourney.mode)).toEqual([
+      'signal',
+      'monolith',
+      'membrane',
     ]);
     for (const concept of concepts) {
       expect(concept.ultimateJourney.chapters.map((chapter) => chapter.id)).toEqual([
@@ -37,8 +37,11 @@ describe('industry concepts', () => {
         'process',
         'package',
       ]);
-      expect(new Set(concept.ultimateJourney.chapters.map((chapter) => chapter.room)).size).toBe(5);
-      expect(concept.ultimateJourney.chapters.at(-1)?.camera.position[2]).toBeLessThan(-50);
+      expect(concept.ultimateJourney.chapters.map((chapter) => chapter.travel)).toEqual([0, 0.18, 0.48, 0.76, 1]);
+      expect(concept.ultimateJourney.chapters.map((chapter) => chapter.atmosphere).every((value, index, values) => (
+        index === 0 || value >= values[index - 1]
+      ))).toBe(true);
+      expect(concept.ultimateJourney.focalPoint.every((value) => value >= 0 && value <= 1)).toBe(true);
     }
   });
 });
@@ -62,11 +65,12 @@ describe('tier URL behavior', () => {
     expect(shouldLoadPremiumAtmosphere('premium', false)).toBe(true);
     expect(shouldLoadPremiumAtmosphere('premium', true)).toBe(false);
     expect(shouldLoadPremiumAtmosphere('ultimate', false)).toBe(false);
-    expect(shouldLoadUltimateJourney('essential', false, true, true)).toBe(false);
-    expect(shouldLoadUltimateJourney('premium', false, true, true)).toBe(false);
-    expect(shouldLoadUltimateJourney('ultimate', true, true, true)).toBe(false);
-    expect(shouldLoadUltimateJourney('ultimate', false, false, true)).toBe(false);
-    expect(shouldLoadUltimateJourney('ultimate', false, true, false)).toBe(false);
-    expect(shouldLoadUltimateJourney('ultimate', false, true, true)).toBe(true);
+    expect(shouldLoadUltimateJourney('essential', false, true, true, true)).toBe(false);
+    expect(shouldLoadUltimateJourney('premium', false, true, true, true)).toBe(false);
+    expect(shouldLoadUltimateJourney('ultimate', true, true, true, true)).toBe(false);
+    expect(shouldLoadUltimateJourney('ultimate', false, false, true, true)).toBe(false);
+    expect(shouldLoadUltimateJourney('ultimate', false, true, false, true)).toBe(false);
+    expect(shouldLoadUltimateJourney('ultimate', false, true, true, false)).toBe(false);
+    expect(shouldLoadUltimateJourney('ultimate', false, true, true, true)).toBe(true);
   });
 });
