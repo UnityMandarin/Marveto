@@ -1,15 +1,7 @@
 export type ExperienceTier = 'essential' | 'premium' | 'ultimate';
 
-export type AtmosphereKind = 'network' | 'architecture' | 'biomorphic';
 export type UltimateEnvironmentMode = 'signal' | 'monolith' | 'membrane';
 export type SceneChapterId = 'hero' | 'viewpoint' | 'capabilities' | 'process' | 'package';
-
-export interface AtmospherePreset {
-  kind: AtmosphereKind;
-  particleCount: number;
-  speed: number;
-  refraction: number;
-}
 
 export interface SceneChapter {
   id: SceneChapterId;
@@ -68,7 +60,6 @@ export interface Concept {
   glow: string;
   ink: string;
   paper: string;
-  premiumAtmosphere: AtmospherePreset;
   ultimateJourney: UltimateJourneyDefinition;
   modules: ConceptModule[];
   process: ConceptStep[];
@@ -98,7 +89,7 @@ export const tierDefinitions: Record<ExperienceTier, TierDefinition> = {
     label: 'Ultimate',
     shortLabel: 'Background journey',
     description: 'A flagship digital experience where the original artwork opens into a continuous, real-time spatial journey.',
-    capabilities: ['Everything in Premium', 'Continuous shader environment', 'Scroll-controlled spatial depth', 'Adaptive cinematic rendering'],
+    capabilities: ['Everything in Premium', 'Authored layered environment', 'Scroll-controlled spatial depth', 'Adaptive cinematic rendering'],
     motionLevel: 'immersive-3d',
   },
 };
@@ -122,7 +113,6 @@ export const concepts: Concept[] = [
     glow: '#cbd6ff',
     ink: '#050a1e',
     paper: '#e9edff',
-    premiumAtmosphere: { kind: 'network', particleCount: 72, speed: 0.86, refraction: 0.92 },
     ultimateJourney: {
       mode: 'signal',
       fog: '#040817',
@@ -185,7 +175,6 @@ export const concepts: Concept[] = [
     glow: '#ffcf9f',
     ink: '#1d1713',
     paper: '#eee6da',
-    premiumAtmosphere: { kind: 'architecture', particleCount: 58, speed: 0.68, refraction: 0.48 },
     ultimateJourney: {
       mode: 'monolith',
       fog: '#17100c',
@@ -248,7 +237,6 @@ export const concepts: Concept[] = [
     glow: '#dff6f1',
     ink: '#12202a',
     paper: '#edf1ee',
-    premiumAtmosphere: { kind: 'biomorphic', particleCount: 64, speed: 0.52, refraction: 0.72 },
     ultimateJourney: {
       mode: 'membrane',
       fog: '#09171d',

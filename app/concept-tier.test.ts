@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { concepts, tierDefinitions, tierOrder } from './concept-data';
-import { parseExperienceTier, shouldLoadPremiumAtmosphere, shouldLoadUltimateJourney, withExperienceTier } from './concept-tier';
+import { parseExperienceTier, shouldLoadUltimateJourney, withExperienceTier } from './concept-tier';
 
 describe('industry concepts', () => {
   it('defines one honest concept for each requested industry', () => {
@@ -19,11 +19,6 @@ describe('industry concepts', () => {
   });
 
   it('defines one continuous, background-led Ultimate journey for every concept', () => {
-    expect(concepts.map((concept) => concept.premiumAtmosphere.kind)).toEqual([
-      'network',
-      'architecture',
-      'biomorphic',
-    ]);
     expect(concepts.map((concept) => concept.ultimateJourney.mode)).toEqual([
       'signal',
       'monolith',
@@ -60,11 +55,7 @@ describe('tier URL behavior', () => {
     }
   });
 
-  it('loads Premium motion without WebGL and Ultimate only for capable fine pointers', () => {
-    expect(shouldLoadPremiumAtmosphere('essential', false)).toBe(false);
-    expect(shouldLoadPremiumAtmosphere('premium', false)).toBe(true);
-    expect(shouldLoadPremiumAtmosphere('premium', true)).toBe(false);
-    expect(shouldLoadPremiumAtmosphere('ultimate', false)).toBe(false);
+  it('keeps Premium image-led and loads Ultimate WebGL only for capable fine pointers', () => {
     expect(shouldLoadUltimateJourney('essential', false, true, true, true)).toBe(false);
     expect(shouldLoadUltimateJourney('premium', false, true, true, true)).toBe(false);
     expect(shouldLoadUltimateJourney('ultimate', true, true, true, true)).toBe(false);

@@ -1,22 +1,24 @@
 'use client';
 
-import { FormEvent, MouseEvent, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { FormEvent, MouseEvent, useEffect, useRef, useState } from 'react';
 import { assetPath, sitePath } from './asset-path';
 import HomeWorld from './HomeWorld';
-import { homeChapters, homeUltimateHref, mapHomeScrollProgress, sampleHomeJourney } from './home-journey';
+import { homeChapters, homeUltimateHref, mapHomeScrollProgress, sampleHomeJourney, sampleJourneyFrame } from './home-journey';
 import { buildMailto, formatInquiry, Inquiry, InquiryErrors, validateInquiry } from './inquiry';
+import { authoredSceneOrder, authoredScenes, AuthoredSceneId } from './scene-registry';
 import { process, projects, services, siteConfig } from './site-data';
 
 const emptyInquiry: Inquiry = { name: '', email: '', company: '', budget: '', brief: '' };
 
-function FallbackPicture({ name, eager = false }: { name: string; eager?: boolean }) {
+function FallbackScene({ sceneId, eager = false }: { sceneId: AuthoredSceneId; eager?: boolean }) {
+  const scene = authoredScenes[sceneId];
   return (
     <picture>
-      <source srcSet={assetPath(`/images/${name}.avif`)} type="image/avif" />
-      <source srcSet={assetPath(`/images/${name}.webp`)} type="image/webp" />
-      <img src={assetPath(`/images/${name}.webp`)} alt="" loading={eager ? 'eager' : 'lazy'}
+      <source media="(max-width: 819px)" srcSet={assetPath(scene.mobileAvif)} type="image/avif" />
+      <source media="(max-width: 819px)" srcSet={assetPath(scene.mobileBase)} type="image/webp" />
+      <source srcSet={assetPath(scene.desktopAvif)} type="image/avif" />
+      <source srcSet={assetPath(scene.desktopBase)} type="image/webp" />
+      <img src={assetPath(scene.desktopBase)} alt="" loading={eager ? 'eager' : 'lazy'}
         fetchPriority={eager ? 'high' : 'auto'} decoding="async" />
     </picture>
   );
@@ -74,7 +76,21 @@ export default function MarvetoExperience() {
       for (let index = 1; index < sectionStops.length; index += 1) {
         if (pageProgress + 0.0005 >= sectionStops[index]) physicalChapter = index;
       }
-      root.current.dataset.chapter = homeChapters[physicalChapter]?.id ?? sampleHomeJourney(progress).chapter.id;
+      const active = homeChapters[physicalChapter] ?? sampleHomeJourney(progress).chapter;
+      root.current.dataset.chapter = active.id;
+      homeChapters.forEach((item, index) => {
+        const section = root.current?.querySelector<HTMLElement>(`[data-home-chapter="${item.id}"]`);
+        if (!section) return;
+        const physicalStart = sectionStops[index];
+        const physicalEnd = index === sectionStops.length - 1 ? 1 : Math.max(sectionStops[index + 1], physicalStart + 0.0001);
+        const local = Math.min(1, Math.max(0, (pageProgress - physicalStart) / Math.max(physicalEnd - physicalStart, 0.0001)));
+        const frame = sampleJourneyFrame(item.start + local * (item.end - item.start));
+        section.style.setProperty('--section-progress', local.toFixed(4));
+        section.style.setProperty('--section-copy-opacity', frame.copyOpacity.toFixed(4));
+        section.dataset.copyPhase = frame.copyPhase;
+        if (item.id === 'services') section.dataset.activeItem = String(Math.min(2, Math.floor(local * 3)));
+        if (item.id === 'process') section.dataset.activeItem = String(Math.min(3, Math.floor(local * 4)));
+      });
     };
     const updateCursor = (event: PointerEvent) => {
       root.current?.style.setProperty('--pointer-x', `${event.clientX}px`);
@@ -97,49 +113,16 @@ export default function MarvetoExperience() {
     };
   }, []);
 
-  useLayoutEffect(() => {
-    if (!root.current || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    gsap.registerPlugin(ScrollTrigger);
-    const context = gsap.context(() => {
-      gsap.fromTo('[data-hero-word]', { yPercent: 115 }, {
-        yPercent: 0, duration: 1.25, delay: 0.75, stagger: 0.09, ease: 'power4.out',
-      });
-      gsap.fromTo('.hero-detail', { opacity: 0, y: 20 }, {
-        opacity: 1, y: 0, duration: 1, delay: 1.25, stagger: 0.08, ease: 'power3.out',
-      });
-      gsap.utils.toArray<HTMLElement>('[data-chapter-copy]').forEach((copy) => {
-        const section = copy.closest<HTMLElement>('[data-home-chapter]');
-        if (!section || section.dataset.homeChapter === 'surface') return;
-        gsap.timeline({ scrollTrigger: { trigger: section, start: 'top 88%', end: 'bottom 12%', scrub: 1.15 } })
-          .fromTo(copy, { y: 95, opacity: 0, filter: 'blur(10px)' }, {
-            y: 0, opacity: 1, filter: 'blur(0px)', duration: 0.4, ease: 'power3.out',
-          })
-          .to(copy, { y: -70, opacity: 0.18, filter: 'blur(3px)', duration: 0.6, ease: 'power2.in' });
-      });
-      gsap.utils.toArray<HTMLElement>('.project-depth-word').forEach((word) => {
-        const section = word.closest<HTMLElement>('.project-chapter');
-        if (!section) return;
-        gsap.fromTo(word, { xPercent: -12, opacity: 0 }, {
-          xPercent: 10, opacity: 0.2, ease: 'none',
-          scrollTrigger: { trigger: section, start: 'top bottom', end: 'bottom top', scrub: 1 },
-        });
-      });
-      gsap.utils.toArray<HTMLElement>('.threshold').forEach((threshold) => {
-        gsap.fromTo(threshold, { '--gate-open': 0 } as gsap.TweenVars, {
-          '--gate-open': 1, ease: 'none',
-          scrollTrigger: { trigger: threshold, start: 'top 82%', end: 'center 38%', scrub: 0.9 },
-        } as gsap.TweenVars);
-      });
-    }, root);
-    return () => context.revert();
-  }, []);
-
   const enterProject = (event: MouseEvent<HTMLAnchorElement>, slug: string) => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    event.preventDefault();
     if (transitioning) return;
+    root.current?.setAttribute('data-transition-scene', slug);
+    event.currentTarget.closest('.project-chapter')?.querySelector<HTMLElement>('h2')
+      ?.style.setProperty('view-transition-name', 'marveto-project-title');
+    if (CSS.supports('view-transition-name: marveto-world')) return;
+    event.preventDefault();
     setTransitioning(slug);
-    window.setTimeout(() => { window.location.href = sitePath(homeUltimateHref(slug)); }, 720);
+    window.setTimeout(() => { window.location.href = sitePath(homeUltimateHref(slug)); }, 520);
   };
 
   const navigateMobile = (event: MouseEvent<HTMLAnchorElement>, href: string) => {
@@ -183,19 +166,19 @@ export default function MarvetoExperience() {
 
       <div className="home-stage" aria-hidden="true">
         <div className="home-fallback">
-          <div className="fallback-plate plate-surface"><FallbackPicture name="hero-ultimate" eager /></div>
-          <div className="fallback-plate plate-signal"><FallbackPicture name="home-signal" /></div>
-          <div className="fallback-plate plate-axiom"><FallbackPicture name="axiom" /></div>
-          <div className="fallback-plate plate-serein"><FallbackPicture name="forma" /></div>
-          <div className="fallback-plate plate-forma"><FallbackPicture name="serein" /></div>
-          <div className="fallback-plate plate-horizon"><FallbackPicture name="home-horizon" /></div>
+          {authoredSceneOrder.map((sceneId) => (
+            <div key={sceneId} className={`fallback-plate plate-${sceneId}`} data-scene={sceneId}>
+              <FallbackScene sceneId={sceneId} eager={sceneId === 'surface'} />
+            </div>
+          ))}
         </div>
         <HomeWorld />
-        <div className="world-light" />
-        <div className="world-grain" />
       </div>
 
-      <div className="route-iris" aria-hidden="true"><span>{transitioning ? `Entering ${transitioning}` : ''}</span></div>
+      <div className="route-transition" aria-hidden="true">
+        {transitioning && <FallbackScene sceneId={transitioning as 'axiom' | 'serein' | 'forma'} eager />}
+        <span>{transitioning ? `Entering ${transitioning}` : ''}</span>
+      </div>
 
       <header className="site-header">
         <a className="wordmark" href="#index" aria-label="Marveto home">marveto<span>°</span></a>

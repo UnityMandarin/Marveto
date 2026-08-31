@@ -1,14 +1,12 @@
 'use client';
 
 import { KeyboardEvent, lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { assetPath, sitePath } from './asset-path';
 import { Concept, ExperienceTier, tierDefinitions, tierOrder } from './concept-data';
-import { parseExperienceTier, shouldLoadPremiumAtmosphere, shouldLoadUltimateJourney, withExperienceTier } from './concept-tier';
+import { parseExperienceTier, shouldLoadUltimateJourney, withExperienceTier } from './concept-tier';
+import { sceneForConcept } from './scene-registry';
 
 const UltimateScene = lazy(() => import('./UltimateScene'));
-const PremiumAtmosphere = lazy(() => import('./PremiumAtmosphere'));
 
 function webglAvailable(): boolean {
   if (typeof document === 'undefined') return false;
@@ -21,11 +19,18 @@ function webglAvailable(): boolean {
 }
 
 function ConceptPicture({ concept, eager = false }: { concept: Concept; eager?: boolean }) {
+  const scene = sceneForConcept(concept.slug);
+  const desktopAvif = assetPath(scene?.desktopAvif ?? `${concept.image}.avif`);
+  const desktopWebp = assetPath(scene?.desktopBase ?? `${concept.image}.webp`);
+  const mobileAvif = assetPath(scene?.mobileAvif ?? `${concept.image}.avif`);
+  const mobileWebp = assetPath(scene?.mobileBase ?? `${concept.image}.webp`);
   return (
     <picture>
-      <source srcSet={assetPath(`${concept.image}.avif`)} type="image/avif" />
-      <source srcSet={assetPath(`${concept.image}.webp`)} type="image/webp" />
-      <img src={assetPath(`${concept.image}.webp`)} alt={concept.imageAlt} loading={eager ? 'eager' : 'lazy'} fetchPriority={eager ? 'high' : 'auto'} />
+      <source media="(max-width: 819px)" srcSet={mobileAvif} type="image/avif" />
+      <source media="(max-width: 819px)" srcSet={mobileWebp} type="image/webp" />
+      <source srcSet={desktopAvif} type="image/avif" />
+      <source srcSet={desktopWebp} type="image/webp" />
+      <img src={desktopWebp} alt={concept.imageAlt} loading={eager ? 'eager' : 'lazy'} fetchPriority={eager ? 'high' : 'auto'} />
     </picture>
   );
 }
@@ -39,10 +44,8 @@ export default function ConceptExperience({ concept }: { concept: Concept }) {
   const [wideViewport, setWideViewport] = useState(false);
   const [hasWebgl, setHasWebgl] = useState(false);
   const selectedTier = tierDefinitions[tier];
+  const conceptScene = sceneForConcept(concept.slug);
   const showUltimate = shouldLoadUltimateJourney(tier, reducedMotion, finePointer, wideViewport, hasWebgl);
-  const showAtmosphere = shouldLoadPremiumAtmosphere(tier, reducedMotion) || (
-    tier === 'ultimate' && !showUltimate && !reducedMotion
-  );
 
   useEffect(() => {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -73,8 +76,9 @@ export default function ConceptExperience({ concept }: { concept: Concept }) {
   }, []);
 
   useEffect(() => {
-    const progress = root.current?.querySelector<HTMLElement>('.concept-progress span');
-    const cursor = root.current?.querySelector<HTMLElement>('.concept-cursor');
+    const shell = root.current;
+    const progress = shell?.querySelector<HTMLElement>('.concept-progress span');
+    const cursor = shell?.querySelector<HTMLElement>('.concept-cursor');
     const updateScroll = () => {
       const max = document.documentElement.scrollHeight - window.innerHeight;
       if (progress) progress.style.transform = `scaleX(${max > 0 ? window.scrollY / max : 0})`;
@@ -83,6 +87,8 @@ export default function ConceptExperience({ concept }: { concept: Concept }) {
       root.current?.style.setProperty('--pointer-x', `${event.clientX}px`);
       root.current?.style.setProperty('--pointer-y', `${event.clientY}px`);
       if (cursor) cursor.style.transform = `translate3d(${event.clientX}px, ${event.clientY}px, 0)`;
+      const target = event.target instanceof Element ? event.target : null;
+      root.current?.toggleAttribute('data-cursor-active', Boolean(target?.closest('a, button, input, textarea, select')));
     };
     updateScroll();
     window.addEventListener('scroll', updateScroll, { passive: true });
@@ -90,47 +96,9 @@ export default function ConceptExperience({ concept }: { concept: Concept }) {
     return () => {
       window.removeEventListener('scroll', updateScroll);
       window.removeEventListener('pointermove', updatePointer);
+      shell?.removeAttribute('data-cursor-active');
     };
   }, []);
-
-  useLayoutEffect(() => {
-    if (!root.current || reducedMotion || tier === 'essential') return;
-    gsap.registerPlugin(ScrollTrigger);
-    const context = gsap.context(() => {
-      gsap.fromTo('.concept-hero__copy > *', { y: 52, opacity: 0, filter: 'blur(8px)' }, {
-        y: 0, opacity: 1, filter: 'blur(0px)', duration: 1.05,
-        delay: tier === 'ultimate' ? 0.38 : 0.18, stagger: 0.08, ease: 'power4.out',
-      });
-      gsap.utils.toArray<HTMLElement>('[data-concept-reveal]').forEach((element) => {
-        const section = element.closest<HTMLElement>('[data-journey-chapter], .concept-visual-break');
-        if (!section) return;
-        gsap.timeline({ scrollTrigger: { trigger: element, start: 'top 92%', end: 'bottom 16%', scrub: tier === 'ultimate' ? 1.1 : .7 } })
-          .fromTo(element, { y: 78, opacity: 0, filter: 'blur(9px)' }, {
-            y: 0, opacity: 1, filter: 'blur(0px)', duration: .42, ease: 'power3.out',
-          })
-          .to(element, { y: tier === 'ultimate' ? -34 : -18, opacity: .78, duration: .58, ease: 'none' });
-      });
-      gsap.to('.concept-hero__media picture', {
-        yPercent: tier === 'ultimate' ? 14 : 8,
-        scale: tier === 'ultimate' ? 1.1 : 1.06,
-        ease: 'none',
-        scrollTrigger: { trigger: '.concept-hero', start: 'top top', end: 'bottom top', scrub: 1 },
-      });
-      if (tier === 'ultimate') {
-        gsap.utils.toArray<HTMLElement>('[data-journey-chapter]').forEach((section) => {
-          const foreground = Array.from(section.children).filter((element) => (
-            !element.classList.contains('concept-hero__media')
-          ));
-          gsap.to(foreground, {
-            yPercent: -5,
-            ease: 'none',
-            scrollTrigger: { trigger: section, start: 'top bottom', end: 'bottom top', scrub: 1.25 },
-          });
-        });
-      }
-    }, root);
-    return () => context.revert();
-  }, [tier, reducedMotion]);
 
   useLayoutEffect(() => {
     if (preservedScroll.current === null) return;
@@ -173,32 +141,24 @@ export default function ConceptExperience({ concept }: { concept: Concept }) {
         '--concept-glow': concept.glow,
         '--concept-ink': concept.ink,
         '--concept-paper': concept.paper,
-        '--atmosphere-refraction': concept.premiumAtmosphere.refraction,
-        '--concept-image': `url("${assetPath(`${concept.image}.webp`)}")`,
+        '--concept-image': `url("${assetPath(conceptScene?.desktopBase ?? `${concept.image}.webp`)}")`,
       } as React.CSSProperties}
     >
       <a className="concept-skip" href="#concept-main">Skip to content</a>
-      <div className="concept-entry-curtain" aria-hidden="true"><span /></div>
       <div className="concept-progress" aria-hidden="true"><span /></div>
-      <div className="concept-cursor" aria-hidden="true"><span>{tier === 'ultimate' ? 'Explore' : 'View'}</span></div>
+      <div className="concept-cursor" aria-hidden="true" />
       <div className="concept-world" aria-hidden="true">
-        {showAtmosphere && (
-          <Suspense fallback={null}>
-            <PremiumAtmosphere preset={concept.premiumAtmosphere} accent={concept.accent} glow={concept.glow} />
-          </Suspense>
-        )}
+        <div className="concept-world__plate"><ConceptPicture concept={concept} eager /></div>
         {showUltimate && (
           <Suspense fallback={null}>
             <UltimateScene
               journey={concept.ultimateJourney}
-              image={assetPath(`${concept.image}.webp`)}
+              image={assetPath(conceptScene?.desktopBase ?? `${concept.image}.webp`)}
               accent={concept.accent}
               glow={concept.glow}
             />
           </Suspense>
         )}
-        <div className="concept-world__light" />
-        <div className="concept-world__grain" />
       </div>
       {showUltimate && (
         <div className="journey-depth" aria-hidden="true">

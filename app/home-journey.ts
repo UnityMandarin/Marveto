@@ -1,70 +1,52 @@
+import { authoredScenes, AuthoredSceneId, ForegroundTone } from './scene-registry';
 import { clampJourneyProgress } from './ultimate-journey';
 
-export type HomeChapterId =
-  | 'surface'
-  | 'signal'
-  | 'axiom'
-  | 'serein'
-  | 'forma'
-  | 'services'
-  | 'process'
-  | 'contact';
+export type HomeChapterId = AuthoredSceneId;
+export type HomeQualityMode = 'full' | 'balanced' | 'static';
+export type CopyPhase = 'enter' | 'hold' | 'exit';
 
 export interface HomeChapterDefinition {
   id: HomeChapterId;
+  sceneId: AuthoredSceneId;
   start: number;
   end: number;
-  texture: string;
-  palette: [string, string, string];
-  focalPoint: [number, number];
-  cameraTravel: number;
-  distortion: number;
-  fog: number;
-  exposure: number;
-  foregroundTone: 'dark' | 'light';
+  copyWindow: readonly [number, number, number, number];
+  camera: readonly [number, number];
+  layerDepth: number;
+  transitionStart: number;
+  foregroundTone: ForegroundTone;
+  conceptScene?: 'axiom' | 'serein' | 'forma';
 }
 
+const chapter = (
+  id: HomeChapterId,
+  start: number,
+  end: number,
+  camera: readonly [number, number],
+  layerDepth: number,
+  conceptScene?: 'axiom' | 'serein' | 'forma',
+): HomeChapterDefinition => ({
+  id,
+  sceneId: id,
+  start,
+  end,
+  copyWindow: [0.06, 0.18, 0.72, 0.94],
+  camera,
+  layerDepth,
+  transitionStart: 0.8,
+  foregroundTone: authoredScenes[id].foregroundTone,
+  conceptScene,
+});
+
 export const homeChapters: readonly HomeChapterDefinition[] = [
-  {
-    id: 'surface', start: 0, end: 0.14, texture: '/images/hero-ultimate.webp',
-    palette: ['#eadfd2', '#756cff', '#ffb76f'], focalPoint: [0.69, 0.51],
-    cameraTravel: 0.08, distortion: 0.18, fog: 0.08, exposure: 1.02, foregroundTone: 'dark',
-  },
-  {
-    id: 'signal', start: 0.14, end: 0.27, texture: '/images/home-signal.webp',
-    palette: ['#080b16', '#294fff', '#ffc487'], focalPoint: [0.5, 0.56],
-    cameraTravel: 0.34, distortion: 0.68, fog: 0.28, exposure: 1.04, foregroundTone: 'light',
-  },
-  {
-    id: 'axiom', start: 0.27, end: 0.39, texture: '/images/axiom.webp',
-    palette: ['#040a24', '#315dff', '#dbe7ff'], focalPoint: [0.58, 0.47],
-    cameraTravel: 0.58, distortion: 0.76, fog: 0.36, exposure: 1.08, foregroundTone: 'light',
-  },
-  {
-    id: 'serein', start: 0.39, end: 0.51, texture: '/images/forma.webp',
-    palette: ['#1b1918', '#ee7b47', '#d9e8ff'], focalPoint: [0.67, 0.55],
-    cameraTravel: 0.7, distortion: 0.48, fog: 0.28, exposure: 0.98, foregroundTone: 'light',
-  },
-  {
-    id: 'forma', start: 0.51, end: 0.65, texture: '/images/serein.webp',
-    palette: ['#172329', '#e88a5c', '#c0afff'], focalPoint: [0.48, 0.5],
-    cameraTravel: 0.8, distortion: 0.82, fog: 0.42, exposure: 1.04, foregroundTone: 'light',
-  },
-  {
-    id: 'services', start: 0.65, end: 0.79, texture: '/images/home-signal.webp',
-    palette: ['#080b15', '#755fff', '#ffac74'], focalPoint: [0.5, 0.49],
-    cameraTravel: 0.88, distortion: 0.7, fog: 0.34, exposure: 0.96, foregroundTone: 'light',
-  },
-  {
-    id: 'process', start: 0.79, end: 0.92, texture: '/images/home-horizon.webp',
-    palette: ['#090b12', '#a894ff', '#ffd0a0'], focalPoint: [0.5, 0.54],
-    cameraTravel: 0.94, distortion: 0.44, fog: 0.3, exposure: 1.02, foregroundTone: 'light',
-  },
-  {
-    id: 'contact', start: 0.92, end: 1, texture: '/images/home-horizon.webp',
-    palette: ['#05070d', '#6576ff', '#ffd5a8'], focalPoint: [0.5, 0.54],
-    cameraTravel: 1, distortion: 0.18, fog: 0.2, exposure: 0.9, foregroundTone: 'light',
-  },
+  chapter('surface', 0, 0.14, [1, 1.045], 0.028),
+  chapter('signal', 0.14, 0.27, [1.02, 1.1], 0.038),
+  chapter('axiom', 0.27, 0.39, [1.01, 1.075], 0.044, 'axiom'),
+  chapter('serein', 0.39, 0.51, [1.015, 1.065], 0.035, 'serein'),
+  chapter('forma', 0.51, 0.65, [1.01, 1.08], 0.042, 'forma'),
+  chapter('services', 0.65, 0.79, [1.015, 1.07], 0.034),
+  chapter('process', 0.79, 0.92, [1.01, 1.085], 0.03),
+  chapter('contact', 0.92, 1, [1.01, 1.035], 0.022),
 ] as const;
 
 export interface HomeJourneySample {
@@ -74,31 +56,71 @@ export interface HomeJourneySample {
   localProgress: number;
 }
 
+export interface JourneyFrame extends HomeJourneySample {
+  nextChapter: HomeChapterDefinition;
+  sceneWeights: readonly [number, number];
+  transitionProgress: number;
+  copyPhase: CopyPhase;
+  copyOpacity: number;
+  cameraScale: number;
+  foregroundOffset: number;
+}
+
+function smoothstep(start: number, end: number, value: number): number {
+  const t = clampJourneyProgress((value - start) / Math.max(end - start, 0.0001));
+  return t * t * (3 - 2 * t);
+}
+
 export function sampleHomeJourney(progress: number): HomeJourneySample {
   const clamped = clampJourneyProgress(progress);
-  const index = homeChapters.findIndex((chapter, chapterIndex) => (
-    clamped < chapter.end || chapterIndex === homeChapters.length - 1
+  const index = homeChapters.findIndex((item, itemIndex) => (
+    clamped < item.end || itemIndex === homeChapters.length - 1
   ));
-  const chapter = homeChapters[Math.max(0, index)];
-  const duration = Math.max(0.0001, chapter.end - chapter.start);
+  const safeIndex = Math.max(0, index);
+  const active = homeChapters[safeIndex];
+  const duration = Math.max(0.0001, active.end - active.start);
   return {
-    chapter,
-    index: Math.max(0, index),
+    chapter: active,
+    index: safeIndex,
     progress: clamped,
-    localProgress: clampJourneyProgress((clamped - chapter.start) / duration),
+    localProgress: clampJourneyProgress((clamped - active.start) / duration),
+  };
+}
+
+export function sampleJourneyFrame(progress: number): JourneyFrame {
+  const sample = sampleHomeJourney(progress);
+  const nextChapter = homeChapters[Math.min(sample.index + 1, homeChapters.length - 1)];
+  const transitionProgress = smoothstep(sample.chapter.transitionStart, 1, sample.localProgress);
+  const [enterStart, holdStart, holdEnd, exitEnd] = sample.chapter.copyWindow;
+  const copyOpacity = sample.localProgress < holdStart
+    ? smoothstep(enterStart, holdStart, sample.localProgress)
+    : sample.localProgress <= holdEnd
+      ? 1
+      : 1 - smoothstep(holdEnd, exitEnd, sample.localProgress);
+  const copyPhase: CopyPhase = sample.localProgress < holdStart
+    ? 'enter'
+    : sample.localProgress <= holdEnd
+      ? 'hold'
+      : 'exit';
+  const cameraScale = sample.chapter.camera[0]
+    + (sample.chapter.camera[1] - sample.chapter.camera[0]) * sample.localProgress;
+  return {
+    ...sample,
+    nextChapter,
+    sceneWeights: [1 - transitionProgress, transitionProgress],
+    transitionProgress,
+    copyPhase,
+    copyOpacity,
+    cameraScale,
+    foregroundOffset: sample.chapter.layerDepth * (sample.localProgress - 0.5),
   };
 }
 
 export function textureCrossfadeWeights(progress: number): number[] {
-  const sample = sampleHomeJourney(progress);
+  const frame = sampleJourneyFrame(progress);
   const weights = homeChapters.map(() => 0);
-  const edge = 0.22;
-  const next = Math.min(homeChapters.length - 1, sample.index + 1);
-  const blend = sample.localProgress <= 1 - edge
-    ? 0
-    : (sample.localProgress - (1 - edge)) / edge;
-  weights[sample.index] = 1 - blend;
-  weights[next] += blend;
+  weights[frame.index] = frame.sceneWeights[0];
+  weights[Math.min(frame.index + 1, homeChapters.length - 1)] += frame.sceneWeights[1];
   return weights;
 }
 
@@ -113,20 +135,22 @@ export function mapHomeScrollProgress(pageProgress: number, sectionStops: readon
   const physicalStart = stops[index];
   const physicalEnd = index === stops.length - 1 ? 1 : Math.max(stops[index + 1], physicalStart + 0.0001);
   const local = clampJourneyProgress((page - physicalStart) / Math.max(physicalEnd - physicalStart, 0.0001));
-  const chapter = homeChapters[index];
-  return chapter.start + local * (chapter.end - chapter.start);
+  const active = homeChapters[index];
+  return active.start + local * (active.end - active.start);
 }
 
-export function shouldUseHomeWebgl(options: {
+export function resolveHomeQuality(options: {
   reducedMotion: boolean;
   finePointer: boolean;
   viewportWidth: number;
   webgl: boolean;
-}): boolean {
-  return options.webgl
-    && !options.reducedMotion
-    && options.finePointer
-    && options.viewportWidth >= 820;
+}): HomeQualityMode {
+  if (!options.webgl || options.reducedMotion || !options.finePointer || options.viewportWidth < 820) return 'static';
+  return options.viewportWidth >= 1180 ? 'full' : 'balanced';
+}
+
+export function shouldUseHomeWebgl(options: Parameters<typeof resolveHomeQuality>[0]): boolean {
+  return resolveHomeQuality(options) !== 'static';
 }
 
 export function homeUltimateHref(slug: string): string {
