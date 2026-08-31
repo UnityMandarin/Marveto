@@ -32,6 +32,31 @@
 .concept-skip:focus { transform: translateY(0); }
 .concept-shell :focus-visible { outline: 2px solid var(--concept-accent); outline-offset: 4px; }
 
+.concept-entry-curtain {
+  position: fixed;
+  z-index: 900;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--concept-ink);
+  pointer-events: none;
+  animation: concept-entry-release 1.35s cubic-bezier(.72,0,.18,1) both;
+}
+.concept-entry-curtain::before {
+  content: '';
+  width: 40vmin;
+  aspect-ratio: 1;
+  border: 1px solid color-mix(in srgb, var(--concept-glow) 52%, transparent);
+  border-radius: 50%;
+  box-shadow: 0 0 120px color-mix(in srgb, var(--concept-accent) 46%, transparent), inset 0 0 80px color-mix(in srgb, var(--concept-glow) 14%, transparent);
+}
+@keyframes concept-entry-release {
+  0%, 38% { clip-path: circle(145% at 50% 50%); opacity: 1; }
+  100% { clip-path: circle(0 at 50% 50%); opacity: .35; }
+}
+
+[data-concept-reveal] { will-change: transform, opacity, filter; }
+
 .concept-progress { position: fixed; z-index: 120; top: 0; left: 0; right: 0; height: 3px; pointer-events: none; }
 .concept-progress span { display: block; width: 100%; height: 100%; transform: scaleX(0); transform-origin: left; background: linear-gradient(90deg, var(--concept-accent), var(--concept-glow), white); }
 
@@ -201,13 +226,6 @@
 .concept-statement__foot { position: relative; z-index: 2; display: grid; grid-template-columns: 1fr 1fr; gap: 9vw; width: min(850px, 86vw); margin: 95px auto 0; font-size: 13px; line-height: 1.55; }
 .concept-statement__foot p { margin: 0; }
 .concept-statement__foot p:last-child { opacity: .65; }
-.concept-orbit { position: absolute; z-index: 1; top: 16%; right: -5vw; width: clamp(220px, 31vw, 500px); aspect-ratio: 1; border: 1px solid color-mix(in srgb, var(--concept-accent) 44%, transparent); border-radius: 50%; }
-.concept-orbit::before, .concept-orbit::after { content: ''; position: absolute; border-radius: 50%; }
-.concept-orbit::before { inset: 16%; border: 1px solid color-mix(in srgb, var(--concept-accent) 32%, transparent); }
-.concept-orbit::after { inset: 39%; background: radial-gradient(circle at 30% 25%, white, var(--concept-glow) 30%, var(--concept-accent) 75%); box-shadow: 0 30px 80px color-mix(in srgb, var(--concept-accent) 35%, transparent); }
-.concept-orbit span, .concept-orbit i { position: absolute; display: block; border-radius: 50%; background: var(--concept-accent); }
-.concept-orbit span { width: 18px; height: 18px; top: 8%; left: 29%; }
-.concept-orbit i { width: 10px; height: 10px; right: 13%; bottom: 21%; }
 
 .concept-capabilities { background: var(--concept-ink); color: white; }
 .concept-section__heading { display: grid; grid-template-columns: 1fr 3.2fr; margin-bottom: 88px; }
@@ -242,7 +260,6 @@
 .concept-shell[data-tier='ultimate'] .concept-world__light { opacity: .08; }
 .concept-shell[data-tier='ultimate'] .concept-world__grain { opacity: .075; mix-blend-mode: overlay; }
 .concept-shell[data-tier='ultimate'] .concept-section { min-height: 124svh; display: flex; flex-direction: column; justify-content: center; color: white; }
-.concept-shell[data-tier='ultimate'] .concept-orbit { display: none; }
 .concept-shell[data-tier='ultimate'] .concept-statement {
   background: linear-gradient(180deg, color-mix(in srgb, var(--concept-ink) 10%, transparent), color-mix(in srgb, var(--concept-ink) 46%, transparent) 70%, color-mix(in srgb, var(--concept-ink) 12%, transparent));
 }
@@ -356,7 +373,6 @@
   .concept-statement { min-height: 100svh; }
   .concept-statement h2 { text-align: left; }
   .concept-statement__foot { grid-template-columns: 1fr; gap: 22px; width: 100%; margin-top: 65px; }
-  .concept-orbit { right: -35vw; top: 8%; opacity: .7; }
   .concept-section__heading { margin-bottom: 58px; }
   .concept-section__heading h2 { font-size: clamp(54px, 15vw, 80px); }
   .concept-module-grid article { min-height: 430px; }

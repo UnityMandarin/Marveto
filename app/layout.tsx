@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   title: siteConfig.title,
   description: siteConfig.description,
   applicationName: 'Marveto',
-  keywords: ['company website design', 'business websites', 'web design studio', 'website development', 'affordable web design'],
+  keywords: ['digital design studio', 'company website design', 'creative development', 'web strategy', 'website development'],
   authors: [{ name: 'Marveto' }],
   creator: 'Marveto',
   publisher: 'Marveto',
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     description: siteConfig.description,
     type: 'website',
     siteName: 'Marveto',
-    images: [{ url: '/og.png', width: 1200, height: 675, alt: 'Marveto — Websites for companies.' }],
+    images: [{ url: '/og.png', width: 1200, height: 675, alt: 'Marveto — Websites for companies. Built to be felt.' }],
   },
   twitter: {
     card: 'summary_large_image',
@@ -46,7 +46,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#111111',
+  themeColor: '#11110f',
   colorScheme: 'light dark',
 };
 

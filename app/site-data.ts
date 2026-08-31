@@ -35,9 +35,9 @@ export interface Benefit {
 
 export const siteConfig: SiteConfig = {
   brand: 'marveto°',
-  title: 'Marveto — Websites for companies',
+  title: 'Marveto — Websites for companies. Built to be felt.',
   description:
-    'Marveto designs and builds clear, credible company websites with practical pricing, an efficient process, and the right level of craft for the job.',
+    'Marveto turns the clearest truth in a company into a digital world people understand, remember, and act on.',
   contactEmail: 'info@unitymandarin.org',
   navigation: [
     { label: 'Examples', href: '#work' },
@@ -53,7 +53,7 @@ export const projects: Project[] = [
     index: '01',
     title: 'Axiom',
     sector: 'Technology · Studio concept',
-    statement: 'Make a complex offer easy to understand.',
+    statement: 'A technical signal becomes a world people can enter.',
     summary:
       'A focused company website concept that explains a technical product in plain language, builds confidence, and guides qualified visitors toward a conversation.',
     deliverables: ['Message hierarchy', 'Product pages', 'Trust signals', 'Inquiry journey'],
@@ -67,7 +67,7 @@ export const projects: Project[] = [
     index: '02',
     title: 'Serein',
     sector: 'Construction · Studio concept',
-    statement: 'Build confidence before the work begins.',
+    statement: 'Material confidence, shaped before the first conversation.',
     summary:
       'A construction website concept that makes capabilities, project types, and the path from planning to handover easy to understand.',
     deliverables: ['Capability structure', 'Project storytelling', 'Responsive design', 'Estimate pathway'],
@@ -81,7 +81,7 @@ export const projects: Project[] = [
     index: '03',
     title: 'Forma',
     sector: 'Medical · Studio concept',
-    statement: 'Make the path to care easier to follow.',
+    statement: 'A calmer, more human path through care.',
     summary:
       'A medical website concept that explains services in plain language, presents the visit journey clearly, and offers an accessible next step.',
     deliverables: ['Service navigation', 'Patient journey', 'Accessibility', 'Appointment pathway'],
@@ -95,21 +95,21 @@ export const projects: Project[] = [
 export const services: Service[] = [
   {
     index: '01',
-    title: 'Plan the right website',
-    description: 'We clarify who it is for, what it needs to say, and what visitors should do next—so time and budget go toward pages that matter.',
-    outputs: ['Website scope', 'Message hierarchy', 'Sitemap', 'Content direction'],
+    title: 'Find the signal',
+    description: 'We isolate the clearest truth in the business: who it is for, why it matters, and what people should understand in seconds.',
+    outputs: ['Positioning', 'Message architecture', 'Experience strategy', 'Content direction'],
   },
   {
     index: '02',
-    title: 'Design for trust',
-    description: 'Responsive design that helps your company look established, makes information easier to scan, and gives every page a clear purpose.',
-    outputs: ['Custom UI', 'Mobile layouts', 'Conversion paths', 'Design system'],
+    title: 'Give it form',
+    description: 'We translate the strategy into an ownable visual language with enough restraint to feel credible and enough character to be remembered.',
+    outputs: ['Art direction', 'Interface design', 'Motion language', 'Design system'],
   },
   {
     index: '03',
-    title: 'Build it lean',
-    description: 'Clean, performance-minded development with useful SEO foundations and an easy handoff. No unnecessary layers that add cost without helping customers.',
-    outputs: ['Front-end development', 'SEO foundations', 'Performance & accessibility', 'Launch support'],
+    title: 'Build the world',
+    description: 'We develop the experience with performance, accessibility, and precision in the same system—so the idea survives contact with every screen.',
+    outputs: ['Creative development', 'Responsive build', 'Performance & accessibility', 'Launch direction'],
   },
 ];
 
@@ -117,38 +117,38 @@ export const benefits: Benefit[] = [
   {
     index: '01',
     title: 'Be taken seriously',
-    description: 'People often look a company up before making contact. A clear website gives them a credible place to verify who you are and what you do.',
+    description: 'Turn the first search into a moment of confidence, with a presence that feels considered before anyone makes contact.',
   },
   {
     index: '02',
-    title: 'Explain it once',
-    description: 'The right structure answers common questions, shows the value of your offer, and saves your team from repeating the same introduction.',
+    title: 'Make complexity clear',
+    description: 'Give a layered business an immediate hierarchy so people can understand the offer without working for it.',
   },
   {
     index: '03',
-    title: 'Be easier to find',
-    description: 'Search-friendly pages create another route to your business. Rankings depend on many factors, but a solid website gives discovery somewhere to start.',
+    title: 'Create memory',
+    description: 'Build a visual language distinctive enough to stay with people after the tab closes and the meeting begins.',
   },
   {
     index: '04',
-    title: 'Guide the next step',
-    description: 'A useful site turns interest into a clear action—an inquiry, call, booking, visit, application, or purchase—without forcing people to guess.',
+    title: 'Move people forward',
+    description: 'Turn attention into a clear next step—an inquiry, booking, visit, application, or purchase—without making people guess.',
   },
   {
     index: '05',
-    title: 'Own your presence',
-    description: 'Social profiles are useful, but platforms change. Your website gives you more control over your message, presentation, and customer journey.',
+    title: 'Own the atmosphere',
+    description: 'Create a place where the message, pace, and customer journey belong to the company rather than to a platform.',
   },
   {
     index: '06',
-    title: 'Grow without restarting',
-    description: 'A thoughtful system can make room for new services, projects, locations, or content as the company changes.',
+    title: 'Leave room to evolve',
+    description: 'Use a thoughtful system that can absorb new services, projects, locations, or stories without losing its identity.',
   },
 ];
 
 export const process = [
-  { index: '01', title: 'Scope', copy: 'Agree on the audience, essential pages, core message, and useful next action before the work expands.' },
-  { index: '02', title: 'Shape', copy: 'Create the content direction and visual route, then confirm the key screens before building the full site.' },
-  { index: '03', title: 'Build', copy: 'Develop a responsive, accessible, performance-minded experience and review it together at clear checkpoints.' },
-  { index: '04', title: 'Launch', copy: 'Complete final checks, publish, and hand over a website your team understands how to use.' },
+  { index: '01', title: 'Distill', copy: 'Find the essential audience, tension, message, and action before the work expands into pages.' },
+  { index: '02', title: 'Direct', copy: 'Establish the content rhythm, visual world, and motion language through the moments that matter most.' },
+  { index: '03', title: 'Construct', copy: 'Build a responsive, accessible, performance-minded experience and refine it at clear checkpoints.' },
+  { index: '04', title: 'Release', copy: 'Complete the final checks, publish with care, and leave your team with a system it can confidently use.' },
 ];

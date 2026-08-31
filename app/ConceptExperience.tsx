@@ -97,25 +97,24 @@ export default function ConceptExperience({ concept }: { concept: Concept }) {
     if (!root.current || reducedMotion || tier === 'essential') return;
     gsap.registerPlugin(ScrollTrigger);
     const context = gsap.context(() => {
+      gsap.fromTo('.concept-hero__copy > *', { y: 52, opacity: 0, filter: 'blur(8px)' }, {
+        y: 0, opacity: 1, filter: 'blur(0px)', duration: 1.05,
+        delay: tier === 'ultimate' ? 0.38 : 0.18, stagger: 0.08, ease: 'power4.out',
+      });
       gsap.utils.toArray<HTMLElement>('[data-concept-reveal]').forEach((element) => {
-        gsap.fromTo(element, { y: 72, opacity: 0 }, {
-          y: 0,
-          opacity: 1,
-          duration: tier === 'ultimate' ? 1.2 : 0.95,
-          ease: 'power3.out',
-          scrollTrigger: { trigger: element, start: 'top 88%', once: true },
-        });
+        const section = element.closest<HTMLElement>('[data-journey-chapter], .concept-visual-break');
+        if (!section) return;
+        gsap.timeline({ scrollTrigger: { trigger: element, start: 'top 92%', end: 'bottom 16%', scrub: tier === 'ultimate' ? 1.1 : .7 } })
+          .fromTo(element, { y: 78, opacity: 0, filter: 'blur(9px)' }, {
+            y: 0, opacity: 1, filter: 'blur(0px)', duration: .42, ease: 'power3.out',
+          })
+          .to(element, { y: tier === 'ultimate' ? -34 : -18, opacity: .78, duration: .58, ease: 'none' });
       });
       gsap.to('.concept-hero__media picture', {
         yPercent: tier === 'ultimate' ? 14 : 8,
         scale: tier === 'ultimate' ? 1.1 : 1.06,
         ease: 'none',
         scrollTrigger: { trigger: '.concept-hero', start: 'top top', end: 'bottom top', scrub: 1 },
-      });
-      gsap.to('.concept-orbit', {
-        rotate: tier === 'ultimate' ? 110 : 42,
-        ease: 'none',
-        scrollTrigger: { trigger: '.concept-statement', start: 'top bottom', end: 'bottom top', scrub: 1 },
       });
       if (tier === 'ultimate') {
         gsap.utils.toArray<HTMLElement>('[data-journey-chapter]').forEach((section) => {
@@ -179,6 +178,7 @@ export default function ConceptExperience({ concept }: { concept: Concept }) {
       } as React.CSSProperties}
     >
       <a className="concept-skip" href="#concept-main">Skip to content</a>
+      <div className="concept-entry-curtain" aria-hidden="true"><span /></div>
       <div className="concept-progress" aria-hidden="true"><span /></div>
       <div className="concept-cursor" aria-hidden="true"><span>{tier === 'ultimate' ? 'Explore' : 'View'}</span></div>
       <div className="concept-world" aria-hidden="true">
@@ -263,7 +263,6 @@ export default function ConceptExperience({ concept }: { concept: Concept }) {
         </section>
 
         <section className="concept-statement concept-section" aria-labelledby="statement-title" data-journey-chapter="viewpoint">
-          <div className="concept-orbit" aria-hidden="true"><span /><i /></div>
           <p className="concept-kicker">Point of view</p>
           <h2 id="statement-title" data-concept-reveal>{concept.statement}</h2>
           <div className="concept-statement__foot" data-concept-reveal>
