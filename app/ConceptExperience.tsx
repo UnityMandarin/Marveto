@@ -10,10 +10,6 @@ import { parseExperienceTier, shouldLoadPremiumAtmosphere, shouldLoadUltimateJou
 const UltimateScene = lazy(() => import('./UltimateScene'));
 const PremiumAtmosphere = lazy(() => import('./PremiumAtmosphere'));
 
-function mediaMatches(query: string): boolean {
-  return typeof window !== 'undefined' && window.matchMedia(query).matches;
-}
-
 function webglAvailable(): boolean {
   if (typeof document === 'undefined') return false;
   try {
@@ -37,14 +33,13 @@ function ConceptPicture({ concept, eager = false }: { concept: Concept; eager?: 
 export default function ConceptExperience({ concept }: { concept: Concept }) {
   const root = useRef<HTMLDivElement>(null);
   const preservedScroll = useRef<number | null>(null);
-  const [tier, setTier] = useState<ExperienceTier>(() => (
-    typeof window === 'undefined' ? 'premium' : parseExperienceTier(window.location.search)
-  ));
-  const [reducedMotion, setReducedMotion] = useState(() => mediaMatches('(prefers-reduced-motion: reduce)'));
-  const [finePointer, setFinePointer] = useState(() => mediaMatches('(pointer: fine)'));
-  const [hasWebgl] = useState(() => webglAvailable());
+  const [tier, setTier] = useState<ExperienceTier>('premium');
+  const [reducedMotion, setReducedMotion] = useState(false);
+  const [finePointer, setFinePointer] = useState(false);
+  const [wideViewport, setWideViewport] = useState(false);
+  const [hasWebgl, setHasWebgl] = useState(false);
   const selectedTier = tierDefinitions[tier];
-  const showUltimate = shouldLoadUltimateJourney(tier, reducedMotion, finePointer, hasWebgl);
+  const showUltimate = shouldLoadUltimateJourney(tier, reducedMotion, finePointer, wideViewport, hasWebgl);
   const showAtmosphere = shouldLoadPremiumAtmosphere(tier, reducedMotion) || (
     tier === 'ultimate' && !showUltimate && !reducedMotion
   );
@@ -52,15 +47,27 @@ export default function ConceptExperience({ concept }: { concept: Concept }) {
   useEffect(() => {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
     const pointer = window.matchMedia('(pointer: fine)');
+    const viewport = window.matchMedia('(min-width: 981px)');
     const onReduced = (event: MediaQueryListEvent) => setReducedMotion(event.matches);
     const onPointer = (event: MediaQueryListEvent) => setFinePointer(event.matches);
+    const onViewport = (event: MediaQueryListEvent) => setWideViewport(event.matches);
     const onHistory = () => setTier(parseExperienceTier(window.location.search));
+    const syncFrame = window.requestAnimationFrame(() => {
+      setTier(parseExperienceTier(window.location.search));
+      setReducedMotion(reduced.matches);
+      setFinePointer(pointer.matches);
+      setWideViewport(viewport.matches);
+      setHasWebgl(webglAvailable());
+    });
     reduced.addEventListener('change', onReduced);
     pointer.addEventListener('change', onPointer);
+    viewport.addEventListener('change', onViewport);
     window.addEventListener('popstate', onHistory);
     return () => {
+      window.cancelAnimationFrame(syncFrame);
       reduced.removeEventListener('change', onReduced);
       pointer.removeEventListener('change', onPointer);
+      viewport.removeEventListener('change', onViewport);
       window.removeEventListener('popstate', onHistory);
     };
   }, []);
@@ -110,6 +117,18 @@ export default function ConceptExperience({ concept }: { concept: Concept }) {
         ease: 'none',
         scrollTrigger: { trigger: '.concept-statement', start: 'top bottom', end: 'bottom top', scrub: 1 },
       });
+      if (tier === 'ultimate') {
+        gsap.utils.toArray<HTMLElement>('[data-journey-chapter]').forEach((section) => {
+          const foreground = Array.from(section.children).filter((element) => (
+            !element.classList.contains('concept-hero__media')
+          ));
+          gsap.to(foreground, {
+            yPercent: -5,
+            ease: 'none',
+            scrollTrigger: { trigger: section, start: 'top bottom', end: 'bottom top', scrub: 1.25 },
+          });
+        });
+      }
     }, root);
     return () => context.revert();
   }, [tier, reducedMotion]);
@@ -156,6 +175,7 @@ export default function ConceptExperience({ concept }: { concept: Concept }) {
         '--concept-ink': concept.ink,
         '--concept-paper': concept.paper,
         '--atmosphere-refraction': concept.premiumAtmosphere.refraction,
+        '--concept-image': `url("${assetPath(`${concept.image}.webp`)}")`,
       } as React.CSSProperties}
     >
       <a className="concept-skip" href="#concept-main">Skip to content</a>
@@ -169,18 +189,21 @@ export default function ConceptExperience({ concept }: { concept: Concept }) {
         )}
         {showUltimate && (
           <Suspense fallback={null}>
-            <UltimateScene journey={concept.ultimateJourney} accent={concept.accent} glow={concept.glow} />
+            <UltimateScene
+              journey={concept.ultimateJourney}
+              image={assetPath(`${concept.image}.webp`)}
+              accent={concept.accent}
+              glow={concept.glow}
+            />
           </Suspense>
         )}
         <div className="concept-world__light" />
         <div className="concept-world__grain" />
       </div>
       {showUltimate && (
-        <ol className="journey-rail" aria-hidden="true">
-          {concept.ultimateJourney.chapters.map((chapter, index) => (
-            <li key={chapter.id} data-rail-chapter={chapter.id}><span>0{index + 1}</span><i /> <p>{chapter.label}</p></li>
-          ))}
-        </ol>
+        <div className="journey-depth" aria-hidden="true">
+          <span>Surface</span><i><b /></i><span>Horizon</span>
+        </div>
       )}
 
       <header className="concept-header">
