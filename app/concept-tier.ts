@@ -26,7 +26,8 @@ export function shouldLoadUltimateJourney(
   tier: ExperienceTier,
   reducedMotion: boolean,
   finePointer: boolean,
+  wideViewport: boolean,
   webglAvailable: boolean,
 ): boolean {
-  return tier === 'ultimate' && !reducedMotion && finePointer && webglAvailable;
+  return tier === 'ultimate' && !reducedMotion && finePointer && wideViewport && webglAvailable;
 }
