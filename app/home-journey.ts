@@ -33,7 +33,7 @@ const chapter = (
   copyWindow: id === 'surface' ? [0, 0, 0.4, 0.58] : [0.06, 0.18, 0.72, 0.94],
   camera,
   layerDepth,
-  transitionStart: 0.8,
+  transitionStart: id === 'surface' ? 0.94 : 0.8,
   foregroundTone: authoredScenes[id].foregroundTone,
   conceptScene,
 });
@@ -86,7 +86,7 @@ export function sampleSurfaceCamera(progress: number): SurfaceCameraFrame {
   const clamped = clampJourneyProgress(progress);
   const spin = smoothstep(0.06, 0.58, clamped);
   const push = smoothstep(0.58, 1, clamped);
-  const crack = smoothstep(0.76, 0.96, clamped);
+  const crack = smoothstep(0.7, 0.86, clamped);
   const orbit = Math.sin(spin * Math.PI);
   const orbitFocus: readonly [number, number] = [
     0.5 + 0.048 * orbit,
