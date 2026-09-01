@@ -225,8 +225,8 @@ export default function MarvetoExperience() {
           <div className="chapter-copy hero-copy" data-chapter-copy>
             <p className="eyebrow hero-detail">Independent digital studio · SF / Worldwide</p>
             <h1 id="hero-title">
-              <span className="masked-line"><span data-hero-word>Websites for companies.</span></span>
-              <span className="masked-line"><em data-hero-word>Built to be felt.</em></span>
+              <span className="hero-line"><span data-hero-word>Websites for companies.</span></span>
+              <span className="hero-line"><em data-hero-word>Built to be felt.</em></span>
             </h1>
             <p className="hero-summary hero-detail">We turn the clearest truth in your company into a digital world people understand, remember, and act on.</p>
             <div className="hero-actions hero-detail"><a className="glass-pill glass-pill--dark" href="#work" data-cursor="Explore">Enter the work <span>↓</span></a><a className="text-link" href="#contact">Begin a project <span>↘</span></a></div>
