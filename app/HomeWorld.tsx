@@ -38,11 +38,11 @@ const worldFragment = /* glsl */ `
   uniform float uExposureA;
   uniform float uExposureB;
   uniform float uTime;
-  uniform float uSurfaceLateral;
+  uniform float uSurfaceSpin;
   uniform float uSurfacePush;
+  uniform float uSurfaceCrack;
   uniform float uSurfaceZoom;
   uniform vec2 uSurfaceFocus;
-  uniform float uSurfaceYaw;
   varying vec2 vUv;
 
   vec2 cover(vec2 uv, vec2 image) {
@@ -70,13 +70,51 @@ const worldFragment = /* glsl */ `
     return 1.0 - smoothstep(mask.z - mask.w, mask.z + mask.w, length(delta));
   }
 
+  float segmentDistance(vec2 p, vec2 a, vec2 b) {
+    vec2 pa = p - a;
+    vec2 ba = b - a;
+    float h = clamp(dot(pa, ba) / max(dot(ba, ba), 0.00001), 0.0, 1.0);
+    return length(pa - ba * h);
+  }
+
+  float crackStroke(vec2 p, vec2 a, vec2 b, float reveal, float start, float end, float width) {
+    float stroke = 1.0 - smoothstep(width, width * 2.4, segmentDistance(p, a, b));
+    return stroke * smoothstep(start, end, reveal);
+  }
+
+  float crystalCrack(vec2 p, float reveal, float width) {
+    float crack = 0.0;
+    crack = max(crack, crackStroke(p, vec2(0.0, 0.012), vec2(-0.018, -0.034), reveal, 0.0, 0.18, width));
+    crack = max(crack, crackStroke(p, vec2(-0.018, -0.034), vec2(0.014, -0.078), reveal, 0.12, 0.32, width));
+    crack = max(crack, crackStroke(p, vec2(0.014, -0.078), vec2(-0.026, -0.132), reveal, 0.26, 0.48, width));
+    crack = max(crack, crackStroke(p, vec2(-0.026, -0.132), vec2(0.008, -0.208), reveal, 0.42, 0.68, width));
+    crack = max(crack, crackStroke(p, vec2(0.014, -0.078), vec2(0.082, -0.116), reveal, 0.36, 0.62, width));
+    crack = max(crack, crackStroke(p, vec2(-0.026, -0.132), vec2(-0.095, -0.158), reveal, 0.5, 0.76, width));
+    crack = max(crack, crackStroke(p, vec2(-0.018, -0.034), vec2(-0.076, 0.004), reveal, 0.58, 0.84, width));
+    crack = max(crack, crackStroke(p, vec2(0.008, -0.208), vec2(-0.02, -0.242), reveal, 0.72, 1.0, width));
+    return clamp(crack, 0.0, 1.0);
+  }
+
   vec3 surfaceLayer(vec2 uv) {
     vec2 coveredUv = cover(uv, vec2(2048.0, 1152.0));
     vec2 screenDelta = uv - 0.5;
-    vec2 cameraUv = uSurfaceFocus + (coveredUv - 0.5) / uSurfaceZoom;
-    cameraUv.x += screenDelta.y * uSurfaceYaw / uSurfaceZoom;
-    cameraUv.y -= screenDelta.x * uSurfaceYaw * 0.18 / uSurfaceZoom;
-    cameraUv += uPointer * 0.006 * (1.0 - uSurfacePush) / uSurfaceZoom;
+    float spinAngle = uSurfaceSpin * 3.14159265;
+    float facing = cos(spinAngle);
+    float depth = sin(spinAngle);
+    float perspective = max(0.34, 1.0 + depth * screenDelta.x * 1.2);
+    float planeWidth = max(abs(facing), 0.055);
+    vec2 turnedUv = vec2(
+      0.5 + (coveredUv.x - 0.5) / (planeWidth * perspective),
+      0.5 + (coveredUv.y - 0.5) / perspective
+    );
+    float onPlane = smoothstep(-0.015, 0.008, turnedUv.x)
+      * (1.0 - smoothstep(0.992, 1.015, turnedUv.x))
+      * smoothstep(-0.015, 0.008, turnedUv.y)
+      * (1.0 - smoothstep(0.992, 1.015, turnedUv.y));
+    if (facing < 0.0) turnedUv.x = 1.0 - turnedUv.x;
+
+    vec2 cameraUv = uSurfaceFocus + (turnedUv - 0.5) / uSurfaceZoom;
+    cameraUv += uPointer * 0.004 * (1.0 - uSurfacePush) * (1.0 - depth * 0.72) / uSurfaceZoom;
 
     vec2 orbCenter = vec2(0.69, 0.705);
     float imageAspect = 2048.0 / 1152.0;
@@ -88,26 +126,39 @@ const worldFragment = /* glsl */ `
     float foregroundMask = max(orbMask, crystalMask * 0.78);
 
     vec2 foregroundUv = cameraUv + vec2(
-      -0.013 * uSurfaceLateral * (1.0 - uSurfacePush),
-      sin(uTime * 0.34) * 0.0025 * (1.0 - uSurfacePush)
+      -0.018 * depth * (1.0 - uSurfacePush),
+      sin(uTime * 0.31) * 0.002 * (1.0 - uSurfacePush)
     );
     vec3 base = texture2D(tSurface, clamp(cameraUv, 0.001, 0.999)).rgb;
     vec3 foreground = texture2D(tSurface, clamp(foregroundUv, 0.001, 0.999)).rgb;
-    vec3 color = mix(base, foreground, foregroundMask * 0.62);
+    vec3 color = mix(base, foreground, foregroundMask * (0.52 + depth * 0.24));
 
     vec2 orbNormal = normalize(orbVector + vec2(0.0001));
     vec2 refraction = vec2(orbNormal.x / imageAspect, orbNormal.y)
-      * (0.008 + sin(uTime * 0.62 + orbDistance * 28.0) * 0.0018)
+      * (0.007 + sin(uTime * 0.54 + orbDistance * 31.0) * 0.0015)
       * orbMask;
     vec3 refracted = texture2D(tSurface, clamp(cameraUv + refraction, 0.001, 0.999)).rgb;
-    color = mix(color, refracted, orbMask * 0.42);
+    color = mix(color, refracted, orbMask * (0.26 + uSurfacePush * 0.3));
 
-    float sweepPosition = fract(uTime * 0.035) * 1.65 - 0.3;
-    float sweep = 1.0 - smoothstep(0.0, 0.075, abs((uv.x + uv.y * 0.36) - sweepPosition));
-    color += vec3(1.0, 0.74, 0.52) * sweep * 0.018 * (1.0 - uSurfacePush);
-    float portalGlow = uSurfacePush * (1.0 - smoothstep(0.06, 0.72, distance(uv, vec2(0.5))));
-    color += vec3(0.16, 0.1, 0.22) * portalGlow;
-    return color;
+    float backside = smoothstep(0.48, 0.55, uSurfaceSpin);
+    float backSheen = 1.0 - smoothstep(0.08, 0.78, distance(uv, vec2(0.42, 0.5)));
+    vec3 backColor = color * vec3(0.2, 0.16, 0.26) + vec3(0.018, 0.008, 0.026) * backSheen;
+    color = mix(color, backColor, backside * (1.0 - uSurfacePush * 0.72));
+
+    float portalGlow = uSurfacePush * (1.0 - smoothstep(0.05, 0.68, distance(uv, vec2(0.5))));
+    color += vec3(0.08, 0.045, 0.11) * portalGlow;
+
+    float crackShadow = crystalCrack(orbVector, uSurfaceCrack, 0.011) * orbMask;
+    float crackCore = crystalCrack(orbVector, uSurfaceCrack, 0.0028) * orbMask;
+    color *= 1.0 - crackShadow * 0.48;
+    color = mix(color, vec3(0.0), crackCore * 0.995);
+
+    vec3 stageBack = texture2D(tSurface, clamp(cover(uv, vec2(2048.0, 1152.0)), 0.001, 0.999)).rgb * 0.055;
+    stageBack += vec3(0.004, 0.001, 0.008) * (1.0 - smoothstep(0.0, 0.8, distance(uv, vec2(0.5))));
+    float planeEdge = onPlane * (1.0 - smoothstep(0.0, 0.035, min(turnedUv.x, 1.0 - turnedUv.x)));
+    vec3 result = mix(stageBack, color, onPlane);
+    result += vec3(0.3, 0.11, 0.34) * planeEdge * depth * 0.34;
+    return result;
   }
 
   vec3 authoredLayer(float scene, vec2 uv, vec4 mask, float exposure) {
@@ -265,11 +316,11 @@ export default function HomeWorld({ onReady, onFailure }: { onReady?: () => void
     const exposureA = { value: 1 };
     const exposureB = { value: 1 };
     const time = { value: 0 };
-    const surfaceLateral = { value: 0 };
+    const surfaceSpin = { value: 0 };
     const surfacePush = { value: 0 };
+    const surfaceCrack = { value: 0 };
     const surfaceZoom = { value: 1 };
     const surfaceFocus = { value: [0.5, 0.5] };
-    const surfaceYaw = { value: 0 };
 
     const worldProgram = new Program(gl, {
       vertex,
@@ -299,11 +350,11 @@ export default function HomeWorld({ onReady, onFailure }: { onReady?: () => void
         uExposureA: exposureA,
         uExposureB: exposureB,
         uTime: time,
-        uSurfaceLateral: surfaceLateral,
+        uSurfaceSpin: surfaceSpin,
         uSurfacePush: surfacePush,
+        uSurfaceCrack: surfaceCrack,
         uSurfaceZoom: surfaceZoom,
         uSurfaceFocus: surfaceFocus,
-        uSurfaceYaw: surfaceYaw,
       },
     });
     new Mesh(gl, { geometry, program: worldProgram }).setParent(worldScene);
@@ -349,11 +400,11 @@ export default function HomeWorld({ onReady, onFailure }: { onReady?: () => void
       maskB.value = nextAsset.foregroundMask;
       exposureA.value = activeAsset.exposure;
       exposureB.value = nextAsset.exposure;
-      surfaceLateral.value = surfaceCamera.lateral;
+      surfaceSpin.value = surfaceCamera.spin;
       surfacePush.value = surfaceCamera.push;
+      surfaceCrack.value = surfaceCamera.crack;
       surfaceZoom.value = surfaceCamera.zoom;
       surfaceFocus.value = [...surfaceCamera.focus];
-      surfaceYaw.value = surfaceCamera.yaw;
       pointer.value = [pointerState.x, pointerState.y];
       activeChapter = journey.chapter.id;
       shell.dataset.chapter = journey.chapter.id;
