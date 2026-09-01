@@ -30,7 +30,7 @@ const chapter = (
   sceneId: id,
   start,
   end,
-  copyWindow: [0.06, 0.18, 0.72, 0.94],
+  copyWindow: id === 'surface' ? [0, 0, 0.4, 0.58] : [0.06, 0.18, 0.72, 0.94],
   camera,
   layerDepth,
   transitionStart: 0.8,
