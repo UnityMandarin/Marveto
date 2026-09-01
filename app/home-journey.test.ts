@@ -92,6 +92,7 @@ describe('home journey', () => {
     const back = sampleSurfaceCamera(0.58);
     const closing = sampleSurfaceCamera(1);
     expect(opening).toMatchObject({ spin: 0, push: 0, crack: 0, zoom: 1, focus: [0.5, 0.5] });
+    expect(sampleJourneyFrame(0)).toMatchObject({ copyPhase: 'hold', copyOpacity: 1 });
     expect(turn.spin).toBeGreaterThan(0.8);
     expect(turn.push).toBe(0);
     expect(turn.crack).toBe(0);
