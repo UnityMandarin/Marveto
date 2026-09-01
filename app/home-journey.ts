@@ -46,9 +46,8 @@ export const homeChapters: readonly HomeChapterDefinition[] = [
   chapter('forma', 0.45, 0.56, [1.01, 1.08], 0.042, 'forma'),
   chapter('services', 0.56, 0.69, [1.015, 1.07], 0.034),
   chapter('studio', 0.69, 0.79, [1.01, 1.055], 0.026),
-  chapter('pricing', 0.79, 0.88, [1.01, 1.06], 0.03),
-  chapter('process', 0.88, 0.95, [1.01, 1.085], 0.03),
-  chapter('contact', 0.95, 1, [1.01, 1.035], 0.022),
+  chapter('pricing', 0.79, 0.91, [1.01, 1.06], 0.03),
+  chapter('contact', 0.91, 1, [1.01, 1.035], 0.022),
 ] as const;
 
 export interface HomeJourneySample {

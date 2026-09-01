@@ -280,10 +280,3 @@ export function pricingTierById(id: string | null | undefined): PricingTier | un
 export function packageOptionValue(tier: PricingTier): string {
   return `${tier.name} — ${tier.displayPrice}`;
 }
-
-export const process = [
-  { index: '01', title: 'Distill', copy: 'Find the essential audience, tension, message, and action before the work expands into pages.' },
-  { index: '02', title: 'Direct', copy: 'Establish the content rhythm, visual world, and motion language through the moments that matter most.' },
-  { index: '03', title: 'Construct', copy: 'Build a responsive, accessible, performance-minded experience and refine it at clear checkpoints.' },
-  { index: '04', title: 'Release', copy: 'Complete the final checks, publish with care, and leave your team with a system it can confidently use.' },
-];

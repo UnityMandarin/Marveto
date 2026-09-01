@@ -7,7 +7,6 @@ export type AuthoredSceneId =
   | 'services'
   | 'studio'
   | 'pricing'
-  | 'process'
   | 'contact';
 
 export type ForegroundTone = 'dark' | 'light';
@@ -130,19 +129,6 @@ export const authoredScenes: Record<AuthoredSceneId, AuthoredSceneAssetSet> = {
     cropMobile: 'center',
     foregroundTone: 'light',
     exposure: 0.84,
-  },
-  process: {
-    id: 'process',
-    desktopBase: '/images/scene-process-v2.webp',
-    desktopAvif: '/images/scene-process-v2.avif',
-    mobileBase: '/images/scene-process-mobile-v2.webp',
-    mobileAvif: '/images/scene-process-mobile-v2.avif',
-    focalPoint: [0.55, 0.52],
-    foregroundMask: [0.53, 0.51, 0.34, 0.16],
-    cropDesktop: 'center',
-    cropMobile: 'center',
-    foregroundTone: 'light',
-    exposure: 0.82,
   },
   contact: {
     id: 'contact',

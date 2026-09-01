@@ -3,9 +3,9 @@ import { homeChapters, homeUltimateHref, mapHomeScrollProgress, resolveHomeQuali
 import { authoredSceneOrder, authoredScenes, sceneForConcept } from './scene-registry';
 
 describe('home journey', () => {
-  it('defines all ten approved chapters in order without gaps', () => {
+  it('defines the nine active chapters in order without gaps', () => {
     expect(homeChapters.map((chapter) => chapter.id)).toEqual([
-      'surface', 'signal', 'axiom', 'serein', 'forma', 'services', 'studio', 'pricing', 'process', 'contact',
+      'surface', 'signal', 'axiom', 'serein', 'forma', 'services', 'studio', 'pricing', 'contact',
     ]);
     expect(homeChapters[0].start).toBe(0);
     expect(homeChapters.at(-1)?.end).toBe(1);
@@ -28,7 +28,7 @@ describe('home journey', () => {
   it('returns normalized crossfade weights', () => {
     for (const progress of [0, 0.13, 0.26, 0.5, 0.78, 0.91, 1]) {
       const weights = textureCrossfadeWeights(progress);
-      expect(weights).toHaveLength(10);
+      expect(weights).toHaveLength(9);
       expect(weights.reduce((sum, weight) => sum + weight, 0)).toBeCloseTo(1, 6);
       weights.forEach((weight) => expect(weight).toBeGreaterThanOrEqual(0));
     }
@@ -52,7 +52,7 @@ describe('home journey', () => {
   });
 
   it('maps physical section stops onto the authored journey contract', () => {
-    const stops = [0, 0.12, 0.22, 0.32, 0.42, 0.52, 0.7, 0.79, 0.87, 0.95];
+    const stops = [0, 0.12, 0.22, 0.32, 0.42, 0.52, 0.7, 0.79, 0.91];
     expect(mapHomeScrollProgress(stops[2], stops)).toBeCloseTo(0.23);
     expect(mapHomeScrollProgress(stops[5], stops)).toBeCloseTo(0.56);
     expect(mapHomeScrollProgress(stops[7], stops)).toBeCloseTo(0.79);

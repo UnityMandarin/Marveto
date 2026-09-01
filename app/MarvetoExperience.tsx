@@ -6,7 +6,7 @@ import HomeWorld from './HomeWorld';
 import { homeChapters, homeUltimateHref, mapHomeScrollProgress, sampleHomeJourney, sampleJourneyFrame } from './home-journey';
 import { applyPackageSelection, buildMailto, formatInquiry, Inquiry, InquiryErrors, validateInquiry } from './inquiry';
 import { authoredSceneOrder, authoredScenes, AuthoredSceneId } from './scene-registry';
-import { benefits, marvetoReasons, packageOptionValue, pricingTerms, pricingTierById, pricingTiers, PricingTier, process, projects, siteConfig } from './site-data';
+import { benefits, marvetoReasons, packageOptionValue, pricingTerms, pricingTierById, pricingTiers, PricingTier, projects, siteConfig } from './site-data';
 
 const emptyInquiry: Inquiry = { name: '', email: '', company: '', preferredPackage: '', brief: '' };
 
@@ -100,7 +100,6 @@ export default function MarvetoExperience() {
         section.dataset.copyPhase = frame.copyPhase;
         if (item.id === 'services') section.dataset.activeItem = String(Math.min(benefits.length - 1, Math.floor(stickyLocal * benefits.length)));
         if (item.id === 'studio') section.dataset.activeItem = String(Math.min(marvetoReasons.length - 1, Math.floor(stickyLocal * marvetoReasons.length)));
-        if (item.id === 'process') section.dataset.activeItem = String(Math.min(3, Math.floor(stickyLocal * 4)));
       });
     };
     const updateCursor = (event: PointerEvent) => {
@@ -285,7 +284,7 @@ export default function MarvetoExperience() {
         <section id="pricing" className="journey-chapter pricing-chapter tone-light" data-home-chapter="pricing" aria-labelledby="pricing-title">
           <div className="chapter-copy pricing-copy" data-chapter-copy>
             <div className="pricing-heading">
-              <p className="chapter-kicker">07 · Clear scope, fixed price</p>
+              <p className="chapter-kicker">07 · Pricing</p>
               <h2 id="pricing-title">Choose the level.<br /><em>Know the terms.</em></h2>
             </div>
             <div className="pricing-grid">
@@ -320,16 +319,9 @@ export default function MarvetoExperience() {
           </div>
         </section>
 
-        <section id="process" className="journey-chapter process-chapter tone-light" data-home-chapter="process" aria-labelledby="process-title">
-          <div className="chapter-copy process-copy" data-chapter-copy>
-            <p className="chapter-kicker">08 · A deliberate passage</p><h2 id="process-title">Four thresholds.<br /><em>One clear direction.</em></h2>
-            <ol className="thresholds">{process.map((step) => <li key={step.index} className="threshold"><span>{step.index}</span><h3>{step.title}</h3><p>{step.copy}</p><i>↘</i></li>)}</ol>
-          </div>
-        </section>
-
         <section id="contact" className="journey-chapter contact-chapter tone-light" data-home-chapter="contact" aria-labelledby="contact-title">
           <div className="chapter-copy contact-copy" data-chapter-copy>
-            <div className="contact-heading"><p className="chapter-kicker">09 · Convergence</p><h2 id="contact-title">Bring the ambition.<br /><em>We’ll shape the signal.</em></h2><p>You do not need a polished brief. Tell us what the company is becoming and what the current experience cannot yet hold.</p></div>
+            <div className="contact-heading"><p className="chapter-kicker">08 · Contact</p><h2 id="contact-title">Bring the ambition.<br /><em>We’ll shape the signal.</em></h2><p>You do not need a polished brief. Tell us what the company is becoming and what the current experience cannot yet hold.</p></div>
             <form onSubmit={submitInquiry} noValidate>
               <label><span>Your name *</span><input value={inquiry.name} onChange={(event) => field('name', event.target.value)} aria-invalid={!!errors.name} aria-describedby="name-error" placeholder="Jane Smith" /><small id="name-error">{errors.name}</small></label>
               <label><span>Email *</span><input type="email" value={inquiry.email} onChange={(event) => field('email', event.target.value)} aria-invalid={!!errors.email} aria-describedby="email-error" placeholder="jane@company.com" /><small id="email-error">{errors.email}</small></label>

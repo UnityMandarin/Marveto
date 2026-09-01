@@ -62,7 +62,6 @@ em { font-family: var(--font-editorial), Georgia, serif; font-weight: 500; }
 .site-shell[data-chapter='services'] .plate-services,
 .site-shell[data-chapter='studio'] .plate-studio,
 .site-shell[data-chapter='pricing'] .plate-pricing,
-.site-shell[data-chapter='process'] .plate-process,
 .site-shell[data-chapter='contact'] .plate-contact { opacity: 1; transform: scale(1); }
 .site-shell:not([data-chapter='surface']) .plate-surface { opacity: 0; transform: scale(1.05); }
 .home-world { z-index: 3; opacity: 0; transition: opacity 1s cubic-bezier(.2,.7,.2,1); }
@@ -108,7 +107,6 @@ main { position: relative; z-index: 10; }
 .services-chapter { height: 390svh; }
 .studio-chapter { height: 350svh; }
 .pricing-chapter { height: 200svh; }
-.process-chapter { height: 180svh; }
 .contact-chapter { height: 150svh; min-height: 980px; padding-bottom: 24px; }
 .tone-light { color: white; text-shadow: 0 1px 28px rgba(0,0,0,.28); }
 .tone-dark { color: #171717; }
@@ -116,7 +114,7 @@ main { position: relative; z-index: 10; }
 .signal-chapter::before { background: linear-gradient(90deg, rgba(3,5,11,.72), transparent 68%); }
 .project-chapter::before { background: linear-gradient(90deg, rgba(3,5,11,.65), transparent 62%); }
 .project-serein::before { background: linear-gradient(270deg, rgba(3,4,6,.7), transparent 64%); }
-.services-chapter::before, .studio-chapter::before, .process-chapter::before { background: linear-gradient(180deg, rgba(2,3,8,.15), rgba(2,3,8,.68) 58%, rgba(2,3,8,.28)); }
+.services-chapter::before, .studio-chapter::before { background: linear-gradient(180deg, rgba(2,3,8,.15), rgba(2,3,8,.68) 58%, rgba(2,3,8,.28)); }
 .pricing-chapter::before { background: linear-gradient(180deg, rgba(2,3,8,.34), rgba(2,3,8,.58) 58%, rgba(2,3,8,.42)); }
 .contact-chapter::before { background: linear-gradient(180deg, rgba(3,5,10,.14), rgba(3,5,10,.68)); }
 .chapter-copy { position: sticky; z-index: 2; top: 0; display: flex; width: 100%; min-height: 100svh; flex-direction: column; justify-content: center; opacity: var(--section-copy-opacity); transform: translate3d(0,0,0); transition: opacity .12s linear, transform .18s linear; will-change: transform, opacity; }
@@ -163,8 +161,8 @@ main { position: relative; z-index: 10; }
 .project-depth-word { display: none; }
 .project-coordinate { position: absolute; right: clamp(24px,5vw,82px); bottom: 8svh; display: flex; gap: 28px; text-transform: uppercase; letter-spacing: .13em; font-size: 7px; }
 
-.services-copy, .studio-copy, .process-copy { max-width: 1320px; margin: auto; }
-.services-copy > h2, .studio-copy > h2, .process-copy > h2 { max-width: 780px; font-size: clamp(62px, 7vw, 112px); }
+.services-copy, .studio-copy { max-width: 1320px; margin: auto; }
+.services-copy > h2, .studio-copy > h2 { max-width: 780px; font-size: clamp(62px, 7vw, 112px); }
 .why-chapter[data-copy-phase] .chapter-copy { transform: none; }
 .why-copy > h2 { max-width: 1060px; font-size: clamp(58px, 6.5vw, 104px); }
 .benefit-sequence { position: relative; min-height: 390px; margin-top: clamp(36px, 5vh, 58px); border-top: 1px solid rgba(255,255,255,.44); border-bottom: 1px solid rgba(255,255,255,.28); }
@@ -226,17 +224,6 @@ main { position: relative; z-index: 10; }
 .pricing-terms strong { text-transform: uppercase; letter-spacing: .12em; font-size: 8px; }
 .pricing-terms p { margin: 5px 0 0; color: rgba(255,255,255,.7); font-size: 8px; line-height: 1.45; }
 
-.thresholds { position: relative; min-height: 300px; margin: 58px 0 0; padding: 0; list-style: none; border-top: 1px solid rgba(255,255,255,.44); border-bottom: 1px solid rgba(255,255,255,.28); }
-.threshold { position: absolute; inset: 0; display: grid; grid-template-columns: 70px 1fr 1.2fr auto; gap: 28px; align-items: center; padding: 35px 0; opacity: 0; transform: translateY(22px); transition: opacity .35s cubic-bezier(.22,.74,.18,1), transform .35s cubic-bezier(.22,.74,.18,1); }
-.process-chapter[data-active-item='0'] .threshold:nth-child(1),
-.process-chapter[data-active-item='1'] .threshold:nth-child(2),
-.process-chapter[data-active-item='2'] .threshold:nth-child(3),
-.process-chapter[data-active-item='3'] .threshold:nth-child(4) { opacity: 1; transform: translateY(0); }
-.threshold > span { font-size: 9px; }
-.threshold h3 { margin: 0; font-size: clamp(55px, 7vw, 104px); font-weight: 490; line-height: .86; letter-spacing: -.065em; }
-.threshold p { max-width: 560px; margin: 0; color: rgba(255,255,255,.8); font-size: 13px; line-height: 1.6; }
-.threshold i { font-style: normal; font-size: 20px; }
-
 .contact-copy { position: sticky; top: 0; display: grid; min-height: 100svh; grid-template-columns: .82fr 1.18fr; gap: clamp(45px, 7vw, 110px); align-items: center; padding-top: max(88px, 9svh); padding-bottom: 92px; opacity: 1; transform: none !important; }
 .contact-heading h2 { margin: 0; font-size: clamp(58px, 7vw, 110px); font-weight: 490; line-height: .84; letter-spacing: -.07em; }
 .contact-heading h2 em { margin-left: 0; }
@@ -295,7 +282,6 @@ main { position: relative; z-index: 10; }
   .services-chapter { min-height: 490svh; }
   .studio-chapter { min-height: 430svh; }
   .pricing-chapter { min-height: auto; padding-top: 110px; padding-bottom: 110px; }
-  .process-chapter { min-height: 185svh; }
   .contact-chapter { min-height: 158svh; padding-bottom: 155px; }
   .chapter-copy { min-height: 100svh; }
   .hero-copy { width: 92vw; padding-top: 20svh; }
@@ -341,11 +327,6 @@ main { position: relative; z-index: 10; }
   .pricing-card button { padding: 14px 16px; }
   .pricing-terms { grid-template-columns: 1fr; gap: 16px; margin-top: 34px; padding-top: 20px; }
   .pricing-terms p { font-size: 9px; }
-  .thresholds { min-height: 350px; margin-top: 38px; }
-  .threshold { grid-template-columns: 30px 1fr; gap: 15px; padding: 28px 0; }
-  .threshold p { grid-column: 2; font-size: 12px; }
-  .threshold h3 { font-size: clamp(48px, 15vw, 72px); }
-  .threshold i { display: none; }
   .contact-heading h2 { font-size: clamp(50px, 14vw, 72px); }
   .contact-copy form { grid-template-columns: 1fr; padding: 22px; }
   .contact-copy form > * { grid-column: 1; }
