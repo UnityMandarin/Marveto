@@ -148,9 +148,9 @@ const worldFragment = /* glsl */ `
     float portalGlow = uSurfacePush * (1.0 - smoothstep(0.05, 0.68, distance(uv, vec2(0.5))));
     color += vec3(0.08, 0.045, 0.11) * portalGlow;
 
-    float crackShadow = crystalCrack(orbVector, uSurfaceCrack, 0.011) * orbMask;
-    float crackCore = crystalCrack(orbVector, uSurfaceCrack, 0.0028) * orbMask;
-    color *= 1.0 - crackShadow * 0.48;
+    float crackShadow = crystalCrack(orbVector, uSurfaceCrack, 0.0024) * orbMask;
+    float crackCore = crystalCrack(orbVector, uSurfaceCrack, 0.00048) * orbMask;
+    color *= 1.0 - crackShadow * 0.32;
     color = mix(color, vec3(0.0), crackCore * 0.995);
 
     vec3 stageBack = texture2D(tSurface, clamp(cover(uv, vec2(2048.0, 1152.0)), 0.001, 0.999)).rgb * 0.055;
