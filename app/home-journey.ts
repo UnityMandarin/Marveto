@@ -68,11 +68,11 @@ export interface JourneyFrame extends HomeJourneySample {
 }
 
 export interface SurfaceCameraFrame {
-  lateral: number;
+  spin: number;
   push: number;
+  crack: number;
   zoom: number;
   focus: readonly [number, number];
-  yaw: number;
 }
 
 export const surfaceOrbFocus = [0.69, 0.705] as const;
@@ -84,21 +84,23 @@ function smoothstep(start: number, end: number, value: number): number {
 
 export function sampleSurfaceCamera(progress: number): SurfaceCameraFrame {
   const clamped = clampJourneyProgress(progress);
-  const lateral = smoothstep(0.04, 0.62, clamped);
-  const push = smoothstep(0.56, 1, clamped);
-  const lateralFocus: readonly [number, number] = [
-    0.5 + 0.155 * lateral,
-    0.5 + 0.055 * lateral,
+  const spin = smoothstep(0.06, 0.58, clamped);
+  const push = smoothstep(0.58, 1, clamped);
+  const crack = smoothstep(0.76, 0.96, clamped);
+  const orbit = Math.sin(spin * Math.PI);
+  const orbitFocus: readonly [number, number] = [
+    0.5 + 0.048 * orbit,
+    0.5 + 0.018 * orbit,
   ];
   return {
-    lateral,
+    spin,
     push,
-    zoom: 1 + lateral * 0.1 + push * 5.35,
+    crack,
+    zoom: 1 + spin * 0.08 + push * 6.42,
     focus: [
-      lateralFocus[0] + (surfaceOrbFocus[0] - lateralFocus[0]) * push,
-      lateralFocus[1] + (surfaceOrbFocus[1] - lateralFocus[1]) * push,
+      orbitFocus[0] + (surfaceOrbFocus[0] - orbitFocus[0]) * push,
+      orbitFocus[1] + (surfaceOrbFocus[1] - orbitFocus[1]) * push,
     ],
-    yaw: Math.sin(lateral * Math.PI) * (1 - push) * 0.11,
   };
 }
 
