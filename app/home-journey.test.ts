@@ -86,20 +86,26 @@ describe('home journey', () => {
     expect(sceneForConcept('forma')?.desktopBase).toBe('/images/serein.webp');
   });
 
-  it('moves laterally before pushing the camera into the hero crystal sphere', () => {
+  it('spins to the back side before pushing into the fractured hero crystal', () => {
     const opening = sampleSurfaceCamera(0);
-    const lateral = sampleSurfaceCamera(0.5);
+    const turn = sampleSurfaceCamera(0.5);
+    const back = sampleSurfaceCamera(0.58);
     const closing = sampleSurfaceCamera(1);
-    expect(opening).toMatchObject({ lateral: 0, push: 0, zoom: 1, focus: [0.5, 0.5], yaw: 0 });
-    expect(lateral.lateral).toBeGreaterThan(0.7);
-    expect(lateral.push).toBe(0);
-    expect(lateral.focus[0]).toBeGreaterThan(opening.focus[0]);
-    expect(lateral.yaw).toBeGreaterThan(0);
-    expect(closing.push).toBe(1);
-    expect(closing.zoom).toBeGreaterThan(6);
+    expect(opening).toMatchObject({ spin: 0, push: 0, crack: 0, zoom: 1, focus: [0.5, 0.5] });
+    expect(turn.spin).toBeGreaterThan(0.8);
+    expect(turn.push).toBe(0);
+    expect(turn.crack).toBe(0);
+    expect(back.spin).toBe(1);
+    expect(back.push).toBe(0);
+    expect(closing).toMatchObject({ spin: 1, push: 1, crack: 1 });
+    expect(closing.zoom).toBeGreaterThan(7);
     expect(closing.focus).toEqual(surfaceOrbFocus);
-    const zoomSamples = Array.from({ length: 21 }, (_, index) => sampleSurfaceCamera(index / 20).zoom);
-    zoomSamples.slice(1).forEach((zoom, index) => expect(zoom).toBeGreaterThanOrEqual(zoomSamples[index]));
+    const frames = Array.from({ length: 21 }, (_, index) => sampleSurfaceCamera(index / 20));
+    frames.slice(1).forEach((frame, index) => {
+      expect(frame.spin).toBeGreaterThanOrEqual(frames[index].spin);
+      expect(frame.zoom).toBeGreaterThanOrEqual(frames[index].zoom);
+      expect(frame.crack).toBeGreaterThanOrEqual(frames[index].crack);
+    });
   });
 
   it('keeps the authored pearl hero and crystal horizon asset mapping', () => {
