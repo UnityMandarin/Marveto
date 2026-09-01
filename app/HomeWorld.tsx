@@ -83,15 +83,18 @@ const worldFragment = /* glsl */ `
   }
 
   float crystalCrack(vec2 p, float reveal, float width) {
+    vec2 fractured = p;
+    fractured.x += sin(p.y * 190.0) * 0.0026 + sin(p.y * 71.0) * 0.0012;
+    fractured.y += sin(p.x * 151.0) * 0.0015;
     float crack = 0.0;
-    crack = max(crack, crackStroke(p, vec2(0.0, 0.012), vec2(-0.018, -0.034), reveal, 0.0, 0.18, width));
-    crack = max(crack, crackStroke(p, vec2(-0.018, -0.034), vec2(0.014, -0.078), reveal, 0.12, 0.32, width));
-    crack = max(crack, crackStroke(p, vec2(0.014, -0.078), vec2(-0.026, -0.132), reveal, 0.26, 0.48, width));
-    crack = max(crack, crackStroke(p, vec2(-0.026, -0.132), vec2(0.008, -0.208), reveal, 0.42, 0.68, width));
-    crack = max(crack, crackStroke(p, vec2(0.014, -0.078), vec2(0.082, -0.116), reveal, 0.36, 0.62, width));
-    crack = max(crack, crackStroke(p, vec2(-0.026, -0.132), vec2(-0.095, -0.158), reveal, 0.5, 0.76, width));
-    crack = max(crack, crackStroke(p, vec2(-0.018, -0.034), vec2(-0.076, 0.004), reveal, 0.58, 0.84, width));
-    crack = max(crack, crackStroke(p, vec2(0.008, -0.208), vec2(-0.02, -0.242), reveal, 0.72, 1.0, width));
+    crack = max(crack, crackStroke(fractured, vec2(0.0, 0.012), vec2(-0.018, -0.034), reveal, 0.0, 0.18, width));
+    crack = max(crack, crackStroke(fractured, vec2(-0.018, -0.034), vec2(0.014, -0.078), reveal, 0.12, 0.32, width));
+    crack = max(crack, crackStroke(fractured, vec2(0.014, -0.078), vec2(-0.026, -0.132), reveal, 0.26, 0.48, width));
+    crack = max(crack, crackStroke(fractured, vec2(-0.026, -0.132), vec2(0.008, -0.208), reveal, 0.42, 0.68, width));
+    crack = max(crack, crackStroke(fractured, vec2(0.014, -0.078), vec2(0.082, -0.116), reveal, 0.36, 0.62, width));
+    crack = max(crack, crackStroke(fractured, vec2(-0.026, -0.132), vec2(-0.095, -0.158), reveal, 0.5, 0.76, width));
+    crack = max(crack, crackStroke(fractured, vec2(-0.018, -0.034), vec2(-0.076, 0.004), reveal, 0.58, 0.84, width));
+    crack = max(crack, crackStroke(fractured, vec2(0.008, -0.208), vec2(-0.02, -0.242), reveal, 0.72, 1.0, width));
     return clamp(crack, 0.0, 1.0);
   }
 
