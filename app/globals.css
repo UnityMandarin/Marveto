@@ -103,7 +103,7 @@ main { position: relative; z-index: 10; }
 .hero-chapter { height: 160svh; }
 .signal-chapter { height: 150svh; }
 .project-chapter { height: 142svh; }
-.services-chapter { height: 180svh; }
+.services-chapter { height: 390svh; }
 .process-chapter { height: 180svh; }
 .contact-chapter { height: 150svh; min-height: 980px; padding-bottom: 24px; }
 .tone-light { color: white; text-shadow: 0 1px 28px rgba(0,0,0,.28); }
@@ -160,15 +160,22 @@ main { position: relative; z-index: 10; }
 
 .services-copy, .process-copy { max-width: 1320px; margin: auto; }
 .services-copy > h2, .process-copy > h2 { max-width: 780px; font-size: clamp(62px, 7vw, 112px); }
-.service-strata { position: relative; min-height: 330px; margin-top: clamp(42px, 6vh, 68px); border-top: 1px solid rgba(255,255,255,.44); border-bottom: 1px solid rgba(255,255,255,.28); }
-.service-strata article { position: absolute; inset: 0; display: grid; grid-template-columns: 70px 1.5fr .72fr; gap: 32px; align-content: center; padding: 35px 0; opacity: 0; transform: translateY(24px); transition: opacity .35s cubic-bezier(.22,.74,.18,1), transform .35s cubic-bezier(.22,.74,.18,1); pointer-events: none; }
-.services-chapter[data-active-item='0'] .service-strata article:nth-child(1),
-.services-chapter[data-active-item='1'] .service-strata article:nth-child(2),
-.services-chapter[data-active-item='2'] .service-strata article:nth-child(3) { opacity: 1; transform: translateY(0); pointer-events: auto; }
-.service-strata article > span { padding-top: 8px; font-size: 9px; }
-.service-strata h3 { margin: 0; font-size: clamp(52px, 6.3vw, 96px); font-weight: 490; line-height: .88; letter-spacing: -.065em; }
-.service-strata p { max-width: 600px; margin: 22px 0 0; color: rgba(255,255,255,.8); font-size: 13px; line-height: 1.6; }
-.service-strata ul { margin: 7px 0 0; padding: 0; list-style: none; color: rgba(255,255,255,.8); text-transform: uppercase; letter-spacing: .12em; font-size: 8px; line-height: 2.1; }
+.why-chapter[data-copy-phase] .chapter-copy { transform: none; }
+.why-copy > h2 { max-width: 1060px; font-size: clamp(58px, 6.5vw, 104px); }
+.benefit-sequence { position: relative; min-height: 390px; margin-top: clamp(36px, 5vh, 58px); border-top: 1px solid rgba(255,255,255,.44); border-bottom: 1px solid rgba(255,255,255,.28); }
+.benefit-sequence article { position: absolute; inset: 0; display: grid; grid-template-columns: 70px minmax(0, 1fr); gap: 32px; align-content: center; padding: 30px 0; opacity: 0; transform: translateY(22px); transition: opacity .35s cubic-bezier(.22,.74,.18,1), transform .35s cubic-bezier(.22,.74,.18,1); pointer-events: none; }
+.why-chapter[data-active-item='0'] .benefit-sequence article:nth-child(1),
+.why-chapter[data-active-item='1'] .benefit-sequence article:nth-child(2),
+.why-chapter[data-active-item='2'] .benefit-sequence article:nth-child(3),
+.why-chapter[data-active-item='3'] .benefit-sequence article:nth-child(4),
+.why-chapter[data-active-item='4'] .benefit-sequence article:nth-child(5),
+.why-chapter[data-active-item='5'] .benefit-sequence article:nth-child(6),
+.why-chapter[data-active-item='6'] .benefit-sequence article:nth-child(7) { opacity: 1; transform: translateY(0); pointer-events: auto; }
+.benefit-sequence article > span { padding-top: 8px; font-size: 9px; }
+.benefit-sequence h3 { max-width: 980px; margin: 0; font-size: clamp(46px, 5.4vw, 82px); font-weight: 490; line-height: .9; letter-spacing: -.058em; }
+.benefit-sequence p { max-width: 940px; margin: 22px 0 0; color: rgba(255,255,255,.84); font-size: clamp(12px, 1vw, 14px); line-height: 1.65; }
+.benefit-sequence a { display: inline-flex; gap: 8px; align-items: center; margin-top: 20px; padding-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,.42); color: rgba(255,255,255,.72); text-transform: uppercase; letter-spacing: .11em; font-size: 7px; }
+.benefit-sequence a i { font-size: 10px; font-style: normal; }
 
 .thresholds { position: relative; min-height: 300px; margin: 58px 0 0; padding: 0; list-style: none; border-top: 1px solid rgba(255,255,255,.44); border-bottom: 1px solid rgba(255,255,255,.28); }
 .threshold { position: absolute; inset: 0; display: grid; grid-template-columns: 70px 1fr 1.2fr auto; gap: 28px; align-items: center; padding: 35px 0; opacity: 0; transform: translateY(22px); transition: opacity .35s cubic-bezier(.22,.74,.18,1), transform .35s cubic-bezier(.22,.74,.18,1); }
@@ -221,7 +228,6 @@ main { position: relative; z-index: 10; }
   .split-copy { width: min(720px, 86vw); margin-left: 0; }
   .project-copy { max-width: 78vw; }
   .project-copy h2 { font-size: clamp(100px, 19vw, 190px); }
-  .service-strata article { grid-template-columns: .18fr 1.5fr .9fr; }
   .contact-chapter { height: auto; min-height: 118svh; padding-bottom: 120px; }
   .contact-copy { position: relative; top: auto; min-height: auto; grid-template-columns: 1fr; gap: 42px; padding-top: 96px; }
 }
@@ -232,7 +238,8 @@ main { position: relative; z-index: 10; }
   .hero-chapter { min-height: 146svh; }
   .signal-chapter { min-height: 142svh; }
   .project-chapter { min-height: 138svh; }
-  .services-chapter, .process-chapter { min-height: 185svh; }
+  .services-chapter { min-height: 490svh; }
+  .process-chapter { min-height: 185svh; }
   .contact-chapter { min-height: 158svh; padding-bottom: 155px; }
   .chapter-copy { min-height: 100svh; }
   .hero-copy { width: 92vw; padding-top: 20svh; }
@@ -252,11 +259,12 @@ main { position: relative; z-index: 10; }
   .project-serein .project-statement, .project-serein .project-entry { margin-left: 0; }
   .project-statement { max-width: 82vw; font-size: 24px; }
   .project-coordinate { right: 22px; bottom: 5svh; }
-  .service-strata { min-height: 350px; margin-top: 38px; }
-  .service-strata article { grid-template-columns: 30px 1fr; gap: 15px; padding: 28px 0; }
-  .service-strata article ul { display: none; }
-  .service-strata h3 { font-size: clamp(46px, 14vw, 68px); }
-  .service-strata p { grid-column: 2; font-size: 12px; }
+  .why-copy > h2 { font-size: clamp(48px, 13vw, 68px); }
+  .benefit-sequence { min-height: 510px; margin-top: 34px; }
+  .benefit-sequence article { grid-template-columns: 28px 1fr; gap: 14px; padding: 24px 0; }
+  .benefit-sequence h3 { font-size: clamp(39px, 11.5vw, 56px); }
+  .benefit-sequence p { margin-top: 18px; font-size: 12px; line-height: 1.58; }
+  .benefit-sequence a { margin-top: 17px; line-height: 1.5; }
   .thresholds { min-height: 350px; margin-top: 38px; }
   .threshold { grid-template-columns: 30px 1fr; gap: 15px; padding: 28px 0; }
   .threshold p { grid-column: 2; font-size: 12px; }

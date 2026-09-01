@@ -20,17 +20,12 @@ export interface Project {
   surface: string;
 }
 
-export interface Service {
-  index: string;
-  title: string;
-  description: string;
-  outputs: string[];
-}
-
 export interface Benefit {
   index: string;
   title: string;
   description: string;
+  source: string;
+  sourceUrl: string;
 }
 
 export const siteConfig: SiteConfig = {
@@ -41,7 +36,7 @@ export const siteConfig: SiteConfig = {
   contactEmail: 'info@unitymandarin.org',
   navigation: [
     { label: 'Examples', href: '#work' },
-    { label: 'Services', href: '#services' },
+    { label: 'Why it matters', href: '#why' },
     { label: 'Process', href: '#process' },
     { label: 'Contact', href: '#contact' },
   ],
@@ -92,57 +87,55 @@ export const projects: Project[] = [
   },
 ];
 
-export const services: Service[] = [
-  {
-    index: '01',
-    title: 'Find the signal',
-    description: 'We isolate the clearest truth in the business: who it is for, why it matters, and what people should understand in seconds.',
-    outputs: ['Positioning', 'Message architecture', 'Experience strategy', 'Content direction'],
-  },
-  {
-    index: '02',
-    title: 'Give it form',
-    description: 'We translate the strategy into an ownable visual language with enough restraint to feel credible and enough character to be remembered.',
-    outputs: ['Art direction', 'Interface design', 'Motion language', 'Design system'],
-  },
-  {
-    index: '03',
-    title: 'Build the world',
-    description: 'We develop the experience with performance, accessibility, and precision in the same system—so the idea survives contact with every screen.',
-    outputs: ['Creative development', 'Responsive build', 'Performance & accessibility', 'Launch direction'],
-  },
-];
-
 export const benefits: Benefit[] = [
   {
     index: '01',
-    title: 'Be taken seriously',
-    description: 'Turn the first search into a moment of confidence, with a presence that feels considered before anyone makes contact.',
+    title: 'Start before the first call',
+    description: 'BrightLocal found 84% of consumers had searched online for a local business in the previous three months, and 28% made a choice in under five minutes. Your site handles the first round of selling while you are busy working. If it cannot quickly show who you help, what you offer, and why you are credible, the shortlist may close without you.',
+    source: 'BrightLocal Consumer Search Behavior, 2026',
+    sourceUrl: 'https://www.brightlocal.com/research/consumer-search-behavior-channels/',
   },
   {
     index: '02',
-    title: 'Make complexity clear',
-    description: 'Give a layered business an immediate hierarchy so people can understand the offer without working for it.',
+    title: 'Look established, not improvised',
+    description: 'Clutch’s 2026 survey of 612 frequent web users found 83% consider an attractive, up-to-date website useful, while 94% value easy navigation. People read design and structure as signs of how a company operates. A dated, confusing, or missing site can create doubt before your price, experience, or service quality gets considered.',
+    source: 'Clutch Website Features Survey, 2026',
+    sourceUrl: 'https://clutch.co/resources/top-6-website-features-people-value',
   },
   {
     index: '03',
-    title: 'Create memory',
-    description: 'Build a visual language distinctive enough to stay with people after the tab closes and the meeting begins.',
+    title: 'Answer it once',
+    description: 'Duda’s 2024 survey found 37% of small-business owners rank providing information among the top ways their website contributes to the business. Clear service pages, pricing context, proof, and FAQs let qualified buyers answer basic questions themselves. That means fewer repetitive explanations for your team and fewer prospects leaving because the offer felt hard to understand.',
+    source: 'Duda SMB Website Survey, 2024',
+    sourceUrl: 'https://blog.duda.co/more-visibility-in-search-survey',
   },
   {
     index: '04',
-    title: 'Move people forward',
-    description: 'Turn attention into a clear next step—an inquiry, booking, visit, application, or purchase—without making people guess.',
+    title: 'Get found when intent is high',
+    description: 'BrightLocal’s 2026 research found 52% of consumers started their most recent local-business search on Google, and 71% used Google somewhere in the journey. A search-friendly site gives Google useful pages to index for each service, problem, and location. Without them, competitors have more opportunities to appear when someone is actively looking to buy.',
+    source: 'BrightLocal Consumer Search Behavior, 2026',
+    sourceUrl: 'https://www.brightlocal.com/research/consumer-search-behavior-channels/',
   },
   {
     index: '05',
-    title: 'Own the atmosphere',
-    description: 'Create a place where the message, pace, and customer journey belong to the company rather than to a platform.',
+    title: 'Turn interest into action',
+    description: 'Baymard’s 2024 checkout research found 17% of shoppers abandoned an order because the process was too long or complicated. The same friction costs service businesses inquiries and bookings. A focused page should make one next step obvious, explain what happens after the click, and ask only for the information needed to move the conversation forward.',
+    source: 'Baymard Checkout Usability Research, 2024',
+    sourceUrl: 'https://baymard.com/blog/checkout-flow-average-form-fields',
   },
   {
     index: '06',
-    title: 'Leave room to evolve',
-    description: 'Use a thoughtful system that can absorb new services, projects, locations, or stories without losing its identity.',
+    title: 'Own the place people land',
+    description: 'Clutch reported in 2025 that 17% of small businesses still had no website, and more than a third of that group relied on social media or marketplaces instead. Those platforms can change formats, distribution, or account access without your approval. Your domain keeps your message, customer path, analytics, and contact options under your control.',
+    source: 'Clutch Small Business Website Survey, 2025',
+    sourceUrl: 'https://clutch.co/press-releases/smb-websites-2025',
+  },
+  {
+    index: '07',
+    title: 'Add without starting over',
+    description: 'Duda’s 2024 SMB survey found 43% ranked easy updates and maintenance as the top factor when choosing how to build their site; nearly 64% had already connected it to core business software. A well-structured site should accommodate new services, locations, proof, and tools without a rebuild. Growth should add pages and capability, not restart the project.',
+    source: 'Duda SMB Website Survey, 2024',
+    sourceUrl: 'https://blog.duda.co/more-visibility-in-search-survey',
   },
 ];
 

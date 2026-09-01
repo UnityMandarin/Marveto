@@ -38,7 +38,7 @@ describe('project inquiry', () => {
 
 describe('public content contracts', () => {
   it('keeps navigation on stable page anchors', () => {
-    expect(siteConfig.navigation.map((item) => item.href)).toEqual(['#work', '#services', '#process', '#contact']);
+    expect(siteConfig.navigation.map((item) => item.href)).toEqual(['#work', '#why', '#process', '#contact']);
   });
 
   it('publishes exactly three honestly labeled studio concepts', () => {
@@ -47,9 +47,24 @@ describe('public content contracts', () => {
     expect(projects.every((project) => project.sector.includes('Studio concept'))).toBe(true);
   });
 
-  it('explains practical website value without guarantees', () => {
-    expect(benefits).toHaveLength(6);
-    expect(benefits.some((benefit) => benefit.title === 'Be taken seriously')).toBe(true);
-    expect(benefits.map((benefit) => benefit.description).join(' ')).not.toMatch(/guarantee|guaranteed/i);
+  it('publishes seven sourced, scannable reasons a website matters', () => {
+    expect(benefits).toHaveLength(7);
+    expect(benefits.map((benefit) => benefit.title)).toEqual([
+      'Start before the first call',
+      'Look established, not improvised',
+      'Answer it once',
+      'Get found when intent is high',
+      'Turn interest into action',
+      'Own the place people land',
+      'Add without starting over',
+    ]);
+    for (const benefit of benefits) {
+      const wordCount = benefit.description.trim().split(/\s+/).length;
+      expect(wordCount).toBeGreaterThanOrEqual(40);
+      expect(wordCount).toBeLessThanOrEqual(70);
+      expect(benefit.description).not.toMatch(/guarantee|guaranteed|revolutionize|unlock|elevate|seamless|!/i);
+      expect(benefit.source).toMatch(/20\d{2}$/);
+      expect(benefit.sourceUrl).toMatch(/^https:\/\//);
+    }
   });
 });

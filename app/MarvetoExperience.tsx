@@ -6,7 +6,7 @@ import HomeWorld from './HomeWorld';
 import { homeChapters, homeUltimateHref, mapHomeScrollProgress, sampleHomeJourney, sampleJourneyFrame } from './home-journey';
 import { buildMailto, formatInquiry, Inquiry, InquiryErrors, validateInquiry } from './inquiry';
 import { authoredSceneOrder, authoredScenes, AuthoredSceneId } from './scene-registry';
-import { process, projects, services, siteConfig } from './site-data';
+import { benefits, process, projects, siteConfig } from './site-data';
 
 const emptyInquiry: Inquiry = { name: '', email: '', company: '', budget: '', brief: '' };
 
@@ -85,11 +85,14 @@ export default function MarvetoExperience() {
         const physicalEnd = index === sectionStops.length - 1 ? 1 : Math.max(sectionStops[index + 1], physicalStart + 0.0001);
         const local = Math.min(1, Math.max(0, (pageProgress - physicalStart) / Math.max(physicalEnd - physicalStart, 0.0001)));
         const frame = sampleJourneyFrame(item.start + local * (item.end - item.start));
+        const sectionTop = section.getBoundingClientRect().top + window.scrollY;
+        const stickyDistance = Math.max(section.offsetHeight - window.innerHeight, 1);
+        const stickyLocal = Math.min(1, Math.max(0, (window.scrollY - sectionTop) / stickyDistance));
         section.style.setProperty('--section-progress', local.toFixed(4));
-        section.style.setProperty('--section-copy-opacity', frame.copyOpacity.toFixed(4));
+        section.style.setProperty('--section-copy-opacity', item.id === 'services' ? '1' : frame.copyOpacity.toFixed(4));
         section.dataset.copyPhase = frame.copyPhase;
-        if (item.id === 'services') section.dataset.activeItem = String(Math.min(2, Math.floor(local * 3)));
-        if (item.id === 'process') section.dataset.activeItem = String(Math.min(3, Math.floor(local * 4)));
+        if (item.id === 'services') section.dataset.activeItem = String(Math.min(benefits.length - 1, Math.floor(stickyLocal * benefits.length)));
+        if (item.id === 'process') section.dataset.activeItem = String(Math.min(3, Math.floor(stickyLocal * 4)));
       });
     };
     const updateCursor = (event: PointerEvent) => {
@@ -230,10 +233,10 @@ export default function MarvetoExperience() {
           ))}
         </div>
 
-        <section id="services" className="journey-chapter services-chapter tone-light" data-home-chapter="services" aria-labelledby="services-title">
-          <div className="chapter-copy services-copy" data-chapter-copy>
-            <p className="chapter-kicker">05 · The studio system</p><h2 id="services-title">One idea.<br /><em>Three strata.</em></h2>
-            <div className="service-strata">{services.map((service) => <article key={service.index}><span>{service.index}</span><div><h3>{service.title}</h3><p>{service.description}</p></div><ul>{service.outputs.map((output) => <li key={output}>{output}</li>)}</ul></article>)}</div>
+        <section id="why" className="journey-chapter services-chapter why-chapter tone-light" data-home-chapter="services" aria-labelledby="why-title">
+          <div className="chapter-copy services-copy why-copy" data-chapter-copy>
+            <p className="chapter-kicker">05 · Evidence, not assumptions</p><h2 id="why-title">Why a website matters.<br /><em>Seven business consequences.</em></h2>
+            <div className="benefit-sequence">{benefits.map((benefit) => <article key={benefit.index}><span>{benefit.index}</span><div><h3>{benefit.title}</h3><p>{benefit.description}</p><a href={benefit.sourceUrl} target="_blank" rel="noreferrer">Source: {benefit.source} <i aria-hidden="true">↗</i></a></div></article>)}</div>
           </div>
         </section>
 
