@@ -5,6 +5,8 @@ export type AuthoredSceneId =
   | 'serein'
   | 'forma'
   | 'services'
+  | 'studio'
+  | 'pricing'
   | 'process'
   | 'contact';
 
@@ -102,6 +104,32 @@ export const authoredScenes: Record<AuthoredSceneId, AuthoredSceneAssetSet> = {
     cropMobile: 'center',
     foregroundTone: 'light',
     exposure: 0.9,
+  },
+  studio: {
+    id: 'studio',
+    desktopBase: '/images/scene-process-v2.webp',
+    desktopAvif: '/images/scene-process-v2.avif',
+    mobileBase: '/images/scene-process-mobile-v2.webp',
+    mobileAvif: '/images/scene-process-mobile-v2.avif',
+    focalPoint: [0.58, 0.5],
+    foregroundMask: [0.58, 0.5, 0.32, 0.15],
+    cropDesktop: 'center',
+    cropMobile: 'center',
+    foregroundTone: 'light',
+    exposure: 0.7,
+  },
+  pricing: {
+    id: 'pricing',
+    desktopBase: '/images/home-horizon.webp',
+    desktopAvif: '/images/home-horizon.avif',
+    mobileBase: '/images/scene-contact-mobile-v3.webp',
+    mobileAvif: '/images/scene-contact-mobile-v3.avif',
+    focalPoint: [0.5, 0.57],
+    foregroundMask: [0.5, 0.57, 0.34, 0.14],
+    cropDesktop: 'center',
+    cropMobile: 'center',
+    foregroundTone: 'light',
+    exposure: 0.84,
   },
   process: {
     id: 'process',

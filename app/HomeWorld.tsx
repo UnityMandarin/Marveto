@@ -23,6 +23,8 @@ const worldFragment = /* glsl */ `
   uniform sampler2D tSerein;
   uniform sampler2D tForma;
   uniform sampler2D tServices;
+  uniform sampler2D tStudio;
+  uniform sampler2D tPricing;
   uniform sampler2D tProcess;
   uniform sampler2D tContact;
   uniform vec2 uResolution;
@@ -52,7 +54,9 @@ const worldFragment = /* glsl */ `
     if (scene < 3.5) return texture2D(tSerein, cover(uv, vec2(1448.0, 1086.0))).rgb;
     if (scene < 4.5) return texture2D(tForma, cover(uv, vec2(1448.0, 1086.0))).rgb;
     if (scene < 5.5) return texture2D(tServices, cover(uv, vec2(1672.0, 938.0))).rgb;
-    if (scene < 6.5) return texture2D(tProcess, cover(uv, vec2(1672.0, 938.0))).rgb;
+    if (scene < 6.5) return texture2D(tStudio, cover(uv, vec2(1672.0, 938.0))).rgb;
+    if (scene < 7.5) return texture2D(tPricing, cover(uv, vec2(1672.0, 941.0))).rgb;
+    if (scene < 8.5) return texture2D(tProcess, cover(uv, vec2(1672.0, 938.0))).rgb;
     return texture2D(tContact, cover(uv, vec2(2048.0, 1152.0))).rgb;
   }
 
@@ -230,8 +234,10 @@ export default function HomeWorld({ onReady, onFailure }: { onReady?: () => void
         tSerein: { value: textures[3] },
         tForma: { value: textures[4] },
         tServices: { value: textures[5] },
-        tProcess: { value: textures[6] },
-        tContact: { value: textures[7] },
+        tStudio: { value: textures[6] },
+        tPricing: { value: textures[7] },
+        tProcess: { value: textures[8] },
+        tContact: { value: textures[9] },
         uResolution: resolution,
         uPointer: pointer,
         uSceneA: sceneA,

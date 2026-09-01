@@ -1,4 +1,6 @@
-export type ExperienceTier = 'essential' | 'premium' | 'ultimate';
+import type { PricingTierId } from './site-data';
+
+export type ExperienceTier = PricingTierId;
 
 export type UltimateEnvironmentMode = 'signal' | 'monolith' | 'membrane';
 export type SceneChapterId = 'hero' | 'viewpoint' | 'capabilities' | 'process' | 'package';

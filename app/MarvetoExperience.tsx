@@ -4,11 +4,11 @@ import { FormEvent, MouseEvent, useEffect, useRef, useState } from 'react';
 import { assetPath, sitePath } from './asset-path';
 import HomeWorld from './HomeWorld';
 import { homeChapters, homeUltimateHref, mapHomeScrollProgress, sampleHomeJourney, sampleJourneyFrame } from './home-journey';
-import { buildMailto, formatInquiry, Inquiry, InquiryErrors, validateInquiry } from './inquiry';
+import { applyPackageSelection, buildMailto, formatInquiry, Inquiry, InquiryErrors, validateInquiry } from './inquiry';
 import { authoredSceneOrder, authoredScenes, AuthoredSceneId } from './scene-registry';
-import { benefits, process, projects, siteConfig } from './site-data';
+import { benefits, marvetoReasons, packageOptionValue, pricingTerms, pricingTierById, pricingTiers, PricingTier, process, projects, siteConfig } from './site-data';
 
-const emptyInquiry: Inquiry = { name: '', email: '', company: '', budget: '', brief: '' };
+const emptyInquiry: Inquiry = { name: '', email: '', company: '', preferredPackage: '', brief: '' };
 
 function FallbackScene({ sceneId, eager = false }: { sceneId: AuthoredSceneId; eager?: boolean }) {
   const scene = authoredScenes[sceneId];
@@ -26,6 +26,7 @@ function FallbackScene({ sceneId, eager = false }: { sceneId: AuthoredSceneId; e
 
 export default function MarvetoExperience() {
   const root = useRef<HTMLDivElement>(null);
+  const automaticBrief = useRef('');
   const [menuOpen, setMenuOpen] = useState(false);
   const [transitioning, setTransitioning] = useState<string | null>(null);
   const [inquiry, setInquiry] = useState<Inquiry>(emptyInquiry);
@@ -40,13 +41,19 @@ export default function MarvetoExperience() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const concept = params.get('concept');
-    const tier = params.get('tier');
+    const tier = pricingTierById(params.get('tier'));
     if (!concept || !tier) return;
     const project = projects.find((item) => item.slug === concept);
     if (!project) return;
-    const frame = window.requestAnimationFrame(() => setInquiry((current) => current.brief ? current : {
-      ...current,
-      brief: `We would like to discuss the ${project.title} ${project.sector.split(' · ')[0].toLowerCase()} concept at the ${tier} level.`,
+    const frame = window.requestAnimationFrame(() => setInquiry((current) => {
+      const result = applyPackageSelection(
+        current,
+        packageOptionValue(tier),
+        `We would like to discuss the ${project.title} ${project.sector.split(' · ')[0].toLowerCase()} concept with the ${tier.name} package.`,
+        automaticBrief.current,
+      );
+      automaticBrief.current = result.automaticBrief;
+      return result.inquiry;
     }));
     return () => window.cancelAnimationFrame(frame);
   }, []);
@@ -92,6 +99,7 @@ export default function MarvetoExperience() {
         section.style.setProperty('--section-copy-opacity', item.id === 'services' ? '1' : frame.copyOpacity.toFixed(4));
         section.dataset.copyPhase = frame.copyPhase;
         if (item.id === 'services') section.dataset.activeItem = String(Math.min(benefits.length - 1, Math.floor(stickyLocal * benefits.length)));
+        if (item.id === 'studio') section.dataset.activeItem = String(Math.min(marvetoReasons.length - 1, Math.floor(stickyLocal * marvetoReasons.length)));
         if (item.id === 'process') section.dataset.activeItem = String(Math.min(3, Math.floor(stickyLocal * 4)));
       });
     };
@@ -154,6 +162,25 @@ export default function MarvetoExperience() {
       await navigator.clipboard.writeText(formatInquiry(inquiry));
       setStatus('Project brief copied. Paste it wherever you like.');
     } catch { setStatus('Copy was blocked by the browser. Select the text and try again.'); }
+  };
+
+  const choosePackage = (tier: PricingTier) => {
+    setInquiry((current) => {
+      const result = applyPackageSelection(
+        current,
+        packageOptionValue(tier),
+        `I would like to discuss the ${tier.name} package for my website.`,
+        automaticBrief.current,
+      );
+      automaticBrief.current = result.automaticBrief;
+      return result.inquiry;
+    });
+    setErrors((current) => ({ ...current, preferredPackage: undefined }));
+    setStatus(`${tier.name} selected. Continue with the project details below.`);
+    window.requestAnimationFrame(() => document.querySelector('#contact')?.scrollIntoView({
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+      block: 'start',
+    }));
   };
 
   const field = (key: keyof Inquiry, value: string) => {
@@ -240,21 +267,74 @@ export default function MarvetoExperience() {
           </div>
         </section>
 
+        <section id="why-marveto" className="journey-chapter studio-chapter tone-light" data-home-chapter="studio" aria-labelledby="why-marveto-title">
+          <div className="chapter-copy studio-copy" data-chapter-copy>
+            <p className="chapter-kicker">06 · Why Marveto</p>
+            <h2 id="why-marveto-title">A small studio.<br /><em>A defined commitment.</em></h2>
+            <div className="reason-sequence">
+              {marvetoReasons.map((reason) => (
+                <article key={reason.index}>
+                  <span>{reason.index}</span>
+                  <div><h3>{reason.title}</h3><p>{reason.description}</p></div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section id="pricing" className="journey-chapter pricing-chapter tone-light" data-home-chapter="pricing" aria-labelledby="pricing-title">
+          <div className="chapter-copy pricing-copy" data-chapter-copy>
+            <div className="pricing-heading">
+              <p className="chapter-kicker">07 · Clear scope, fixed price</p>
+              <h2 id="pricing-title">Choose the level.<br /><em>Know the terms.</em></h2>
+            </div>
+            <div className="pricing-grid">
+              {pricingTiers.map((tier) => (
+                <article key={tier.id} className={`pricing-card pricing-card--${tier.id}`}>
+                  <div className="pricing-card__top">
+                    <span>{tier.index}</span>
+                    {tier.badge && <small>{tier.badge}</small>}
+                  </div>
+                  <h3>{tier.name}</h3>
+                  <p className="pricing-card__price">{tier.displayPrice}</p>
+                  <p className="pricing-card__positioning">{tier.positioning}</p>
+                  <ul>{tier.features.map((feature) => <li key={feature}>{feature}</li>)}</ul>
+                  <dl>
+                    <div><dt>Delivery</dt><dd>{tier.turnaround}</dd></div>
+                    <div><dt>Additional revisions</dt><dd>${tier.additionalRevisionPrice} each</dd></div>
+                  </dl>
+                  <button
+                    type="button"
+                    onClick={() => choosePackage(tier)}
+                    aria-pressed={inquiry.preferredPackage === packageOptionValue(tier)}
+                    data-cursor="Choose"
+                  >
+                    <span>{tier.cta}</span><i aria-hidden="true">↘</i>
+                  </button>
+                </article>
+              ))}
+            </div>
+            <aside className="pricing-terms" aria-label="Terms shared by all packages">
+              {pricingTerms.map((term) => <div key={term.title}><strong>{term.title}</strong><p>{term.description}</p></div>)}
+            </aside>
+          </div>
+        </section>
+
         <section id="process" className="journey-chapter process-chapter tone-light" data-home-chapter="process" aria-labelledby="process-title">
           <div className="chapter-copy process-copy" data-chapter-copy>
-            <p className="chapter-kicker">06 · A deliberate passage</p><h2 id="process-title">Four thresholds.<br /><em>One clear direction.</em></h2>
+            <p className="chapter-kicker">08 · A deliberate passage</p><h2 id="process-title">Four thresholds.<br /><em>One clear direction.</em></h2>
             <ol className="thresholds">{process.map((step) => <li key={step.index} className="threshold"><span>{step.index}</span><h3>{step.title}</h3><p>{step.copy}</p><i>↘</i></li>)}</ol>
           </div>
         </section>
 
         <section id="contact" className="journey-chapter contact-chapter tone-light" data-home-chapter="contact" aria-labelledby="contact-title">
           <div className="chapter-copy contact-copy" data-chapter-copy>
-            <div className="contact-heading"><p className="chapter-kicker">07 · Convergence</p><h2 id="contact-title">Bring the ambition.<br /><em>We’ll shape the signal.</em></h2><p>You do not need a polished brief. Tell us what the company is becoming and what the current experience cannot yet hold.</p></div>
+            <div className="contact-heading"><p className="chapter-kicker">09 · Convergence</p><h2 id="contact-title">Bring the ambition.<br /><em>We’ll shape the signal.</em></h2><p>You do not need a polished brief. Tell us what the company is becoming and what the current experience cannot yet hold.</p></div>
             <form onSubmit={submitInquiry} noValidate>
               <label><span>Your name *</span><input value={inquiry.name} onChange={(event) => field('name', event.target.value)} aria-invalid={!!errors.name} aria-describedby="name-error" placeholder="Jane Smith" /><small id="name-error">{errors.name}</small></label>
               <label><span>Email *</span><input type="email" value={inquiry.email} onChange={(event) => field('email', event.target.value)} aria-invalid={!!errors.email} aria-describedby="email-error" placeholder="jane@company.com" /><small id="email-error">{errors.email}</small></label>
               <label><span>Company</span><input value={inquiry.company} onChange={(event) => field('company', event.target.value)} placeholder="Your company" /></label>
-              <label><span>Working budget *</span><select value={inquiry.budget} onChange={(event) => field('budget', event.target.value)} aria-invalid={!!errors.budget} aria-describedby="budget-error"><option value="">Choose a range</option><option>Under $5k</option><option>$5k–$10k</option><option>$10k–$25k</option><option>$25k+</option><option>Not sure yet</option></select><small id="budget-error">{errors.budget}</small></label>
+              <label><span>Preferred package *</span><select value={inquiry.preferredPackage} onChange={(event) => field('preferredPackage', event.target.value)} aria-invalid={!!errors.preferredPackage} aria-describedby="package-error"><option value="">Choose a package</option>{pricingTiers.map((tier) => <option key={tier.id} value={packageOptionValue(tier)}>{packageOptionValue(tier)}</option>)}<option>Not sure yet</option></select><small id="package-error">{errors.preferredPackage}</small></label>
               <label className="form-wide"><span>What should the website make possible? *</span><textarea value={inquiry.brief} onChange={(event) => field('brief', event.target.value)} aria-invalid={!!errors.brief} aria-describedby="brief-error" rows={3} placeholder="Clarify the offer, earn trust, open a market, create qualified demand…" /><small id="brief-error">{errors.brief}</small></label>
               <div className="form-actions form-wide"><button type="submit" className="glass-pill glass-pill--light" data-cursor="Send">Open in email <span>↗</span></button><button type="button" className="text-button" onClick={copyBrief}>Copy project brief</button><p role="status" aria-live="polite">{status}</p></div>
             </form>

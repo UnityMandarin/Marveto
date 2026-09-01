@@ -39,14 +39,16 @@ const chapter = (
 });
 
 export const homeChapters: readonly HomeChapterDefinition[] = [
-  chapter('surface', 0, 0.14, [1, 1], 0),
-  chapter('signal', 0.14, 0.27, [1.02, 1.1], 0.038),
-  chapter('axiom', 0.27, 0.39, [1.01, 1.075], 0.044, 'axiom'),
-  chapter('serein', 0.39, 0.51, [1.015, 1.065], 0.035, 'serein'),
-  chapter('forma', 0.51, 0.65, [1.01, 1.08], 0.042, 'forma'),
-  chapter('services', 0.65, 0.79, [1.015, 1.07], 0.034),
-  chapter('process', 0.79, 0.92, [1.01, 1.085], 0.03),
-  chapter('contact', 0.92, 1, [1.01, 1.035], 0.022),
+  chapter('surface', 0, 0.12, [1, 1], 0),
+  chapter('signal', 0.12, 0.23, [1.02, 1.1], 0.038),
+  chapter('axiom', 0.23, 0.34, [1.01, 1.075], 0.044, 'axiom'),
+  chapter('serein', 0.34, 0.45, [1.015, 1.065], 0.035, 'serein'),
+  chapter('forma', 0.45, 0.56, [1.01, 1.08], 0.042, 'forma'),
+  chapter('services', 0.56, 0.69, [1.015, 1.07], 0.034),
+  chapter('studio', 0.69, 0.79, [1.01, 1.055], 0.026),
+  chapter('pricing', 0.79, 0.88, [1.01, 1.06], 0.03),
+  chapter('process', 0.88, 0.95, [1.01, 1.085], 0.03),
+  chapter('contact', 0.95, 1, [1.01, 1.035], 0.022),
 ] as const;
 
 export interface HomeJourneySample {

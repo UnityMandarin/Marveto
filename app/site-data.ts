@@ -28,6 +28,34 @@ export interface Benefit {
   sourceUrl: string;
 }
 
+export interface MarvetoReason {
+  index: string;
+  title: string;
+  description: string;
+}
+
+export type PricingTierId = 'essential' | 'premium' | 'ultimate';
+
+export interface PricingTier {
+  id: PricingTierId;
+  index: string;
+  name: string;
+  price: number;
+  displayPrice: string;
+  badge?: 'Recommended' | 'Max result';
+  positioning: string;
+  features: string[];
+  turnaround: string;
+  includedRevisions: number;
+  additionalRevisionPrice: number;
+  cta: string;
+}
+
+export interface PricingTerm {
+  title: string;
+  description: string;
+}
+
 export const siteConfig: SiteConfig = {
   brand: 'marveto°',
   title: 'Marveto — Websites for companies. Built to be felt.',
@@ -37,7 +65,7 @@ export const siteConfig: SiteConfig = {
   navigation: [
     { label: 'Examples', href: '#work' },
     { label: 'Why it matters', href: '#why' },
-    { label: 'Process', href: '#process' },
+    { label: 'Pricing', href: '#pricing' },
     { label: 'Contact', href: '#contact' },
   ],
 };
@@ -138,6 +166,120 @@ export const benefits: Benefit[] = [
     sourceUrl: 'https://blog.duda.co/more-visibility-in-search-survey',
   },
 ];
+
+export const marvetoReasons: MarvetoReason[] = [
+  {
+    index: '01',
+    title: 'Ten days, with a defined finish',
+    description: 'Every Marveto tier is scheduled for delivery within 10 days or less. The scope is agreed before work starts, so you know the target, the delivery window, and which level of design and interaction you are purchasing.',
+  },
+  {
+    index: '02',
+    title: 'Half now. Half when delivered.',
+    description: 'You pay 50% to begin and the remaining 50% when the website is delivered. If the completed site is non-functional, materially broken, causes technical problems, or clearly follows the wrong subject despite the instructions you provided, you receive a full refund.',
+  },
+  {
+    index: '03',
+    title: 'Revision costs stay visible',
+    description: 'Essential includes three revisions, Premium includes four, and Ultimate includes five. Additional revisions cost $29, $59, or $149 respectively and remain within the selected design level. You see the included allowance and additional cost before paying a deposit.',
+  },
+  {
+    index: '04',
+    title: 'Custom code, shaped around you',
+    description: 'Every Marveto website is custom-coded for the agreed business and design level. During a booked session, we collect your information, priorities, and visual direction. That brief guides the content structure, interface, imagery, and interactions we create.',
+  },
+  {
+    index: '05',
+    title: 'Support remains available',
+    description: 'Launch is not the last time you can reach Marveto. You can book free Zoom sessions for questions, technical support, or guidance. If your request changes the website, it counts as a revision and its price is confirmed before work begins.',
+  },
+  {
+    index: '06',
+    title: 'We handle the launch mechanics',
+    description: 'We help you obtain a domain, publish the website, connect the domain, and hand the completed site to you. The process covers the technical steps that often leave business owners with finished files but no properly launched website.',
+  },
+];
+
+export const pricingTiers: PricingTier[] = [
+  {
+    id: 'essential',
+    index: '01',
+    name: 'Essential',
+    price: 599,
+    displayPrice: '$599',
+    positioning: 'For businesses that need a credible, custom-coded website with the essential structure handled correctly.',
+    features: [
+      'Custom-coded responsive website',
+      'Clear business content structure',
+      'Accessible core interactions',
+      'Search-ready page foundations',
+      'Domain connection and launch',
+      'Three revisions included',
+    ],
+    turnaround: '10 days or less',
+    includedRevisions: 3,
+    additionalRevisionPrice: 29,
+    cta: 'Choose Essential',
+  },
+  {
+    id: 'premium',
+    index: '02',
+    name: 'Premium',
+    price: 999,
+    displayPrice: '$999',
+    badge: 'Recommended',
+    positioning: 'For businesses that need the Essential foundation with stronger visual direction, controlled motion, and more developed interactions.',
+    features: [
+      'Everything included in Essential',
+      'Art-directed motion system',
+      'Immersive section transitions',
+      'Advanced interaction design',
+      'Domain connection and launch',
+      'Four revisions included',
+    ],
+    turnaround: '10 days or less',
+    includedRevisions: 4,
+    additionalRevisionPrice: 59,
+    cta: 'Choose Premium',
+  },
+  {
+    id: 'ultimate',
+    index: '03',
+    name: 'Ultimate',
+    price: 1799,
+    displayPrice: '$1,799',
+    badge: 'Max result',
+    positioning: 'For businesses that need a high-detail visual environment with scroll-controlled depth and adaptive cinematic rendering.',
+    features: [
+      'Everything included in Premium',
+      'Authored layered visual environment',
+      'Scroll-controlled spatial depth',
+      'Adaptive cinematic rendering',
+      'Domain connection and launch',
+      'Five revisions included',
+    ],
+    turnaround: '10 days or less',
+    includedRevisions: 5,
+    additionalRevisionPrice: 149,
+    cta: 'Choose Ultimate',
+  },
+];
+
+export const pricingTerms: PricingTerm[] = [
+  { title: 'Payment', description: '50% deposit and 50% on delivery.' },
+  { title: 'Support', description: 'Free booked Zoom support sessions.' },
+  { title: 'Launch', description: 'Domain acquisition, connection, launch, and handover assistance. Third-party domain and hosting charges are not included.' },
+  { title: 'Changes', description: 'Additional changes use the selected tier’s revision rate.' },
+  { title: 'Refund', description: 'If the completed site is non-functional, materially broken, causes technical problems, or clearly follows the wrong subject despite the instructions you provided, you receive a full refund.' },
+];
+
+export function pricingTierById(id: string | null | undefined): PricingTier | undefined {
+  return pricingTiers.find((tier) => tier.id === id);
+}
+
+export function packageOptionValue(tier: PricingTier): string {
+  return `${tier.name} — ${tier.displayPrice}`;
+}
 
 export const process = [
   { index: '01', title: 'Distill', copy: 'Find the essential audience, tension, message, and action before the work expands into pages.' },

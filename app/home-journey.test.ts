@@ -3,9 +3,9 @@ import { homeChapters, homeUltimateHref, mapHomeScrollProgress, resolveHomeQuali
 import { authoredSceneOrder, authoredScenes, sceneForConcept } from './scene-registry';
 
 describe('home journey', () => {
-  it('defines all eight approved chapters in order without gaps', () => {
+  it('defines all ten approved chapters in order without gaps', () => {
     expect(homeChapters.map((chapter) => chapter.id)).toEqual([
-      'surface', 'signal', 'axiom', 'serein', 'forma', 'services', 'process', 'contact',
+      'surface', 'signal', 'axiom', 'serein', 'forma', 'services', 'studio', 'pricing', 'process', 'contact',
     ]);
     expect(homeChapters[0].start).toBe(0);
     expect(homeChapters.at(-1)?.end).toBe(1);
@@ -20,14 +20,15 @@ describe('home journey', () => {
     expect(sampleHomeJourney(7).progress).toBe(1);
     expect(sampleHomeJourney(0.2).chapter.id).toBe('signal');
     expect(sampleHomeJourney(0.33).chapter.id).toBe('axiom');
-    expect(sampleHomeJourney(0.95).chapter.id).toBe('contact');
-    expect(sampleHomeJourney(0.145).localProgress).toBeLessThan(sampleHomeJourney(0.2).localProgress);
+    expect(sampleHomeJourney(0.83).chapter.id).toBe('pricing');
+    expect(sampleHomeJourney(0.97).chapter.id).toBe('contact');
+    expect(sampleHomeJourney(0.125).localProgress).toBeLessThan(sampleHomeJourney(0.2).localProgress);
   });
 
   it('returns normalized crossfade weights', () => {
     for (const progress of [0, 0.13, 0.26, 0.5, 0.78, 0.91, 1]) {
       const weights = textureCrossfadeWeights(progress);
-      expect(weights).toHaveLength(8);
+      expect(weights).toHaveLength(10);
       expect(weights.reduce((sum, weight) => sum + weight, 0)).toBeCloseTo(1, 6);
       weights.forEach((weight) => expect(weight).toBeGreaterThanOrEqual(0));
     }
@@ -51,9 +52,10 @@ describe('home journey', () => {
   });
 
   it('maps physical section stops onto the authored journey contract', () => {
-    const stops = [0, 0.16, 0.3, 0.43, 0.56, 0.7, 0.86, 0.94];
-    expect(mapHomeScrollProgress(stops[2], stops)).toBeCloseTo(0.27);
-    expect(mapHomeScrollProgress(stops[5], stops)).toBeCloseTo(0.65);
+    const stops = [0, 0.12, 0.22, 0.32, 0.42, 0.52, 0.7, 0.79, 0.87, 0.95];
+    expect(mapHomeScrollProgress(stops[2], stops)).toBeCloseTo(0.23);
+    expect(mapHomeScrollProgress(stops[5], stops)).toBeCloseTo(0.56);
+    expect(mapHomeScrollProgress(stops[7], stops)).toBeCloseTo(0.79);
     expect(mapHomeScrollProgress(1, stops)).toBe(1);
     const samples = Array.from({ length: 101 }, (_, index) => mapHomeScrollProgress(index / 100, stops));
     samples.slice(1).forEach((sample, index) => expect(sample).toBeGreaterThanOrEqual(samples[index]));
@@ -92,6 +94,9 @@ describe('home journey', () => {
     expect(authoredScenes.contact.desktopBase).toBe('/images/scene-contact-v3.webp');
     expect(authoredScenes.contact.mobileBase).toBe('/images/scene-contact-mobile-v3.webp');
     expect(authoredScenes.contact.focalPoint).toEqual([0.5, 0.6]);
+    expect(authoredScenes.studio.desktopBase).toBe('/images/scene-process-v2.webp');
+    expect(authoredScenes.pricing.desktopBase).toBe('/images/home-horizon.webp');
+    expect(authoredScenes.pricing.mobileBase).toBe('/images/scene-contact-mobile-v3.webp');
   });
 
   it('preserves the Ultimate tier in every homepage concept handoff', () => {
