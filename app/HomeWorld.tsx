@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Geometry, Mesh, Program, Renderer, RenderTarget, Texture, Transform } from 'ogl';
 import { assetPath } from './asset-path';
-import { homeChapters, HomeQualityMode, mapHomeScrollProgress, resolveHomeQuality, sampleJourneyFrame } from './home-journey';
+import { homeChapters, HomeQualityMode, mapHomeScrollProgress, resolveHomeQuality, sampleJourneyFrame, sampleSurfaceCamera } from './home-journey';
 import { authoredSceneOrder, authoredScenes } from './scene-registry';
 import { clampJourneyProgress } from './ultimate-journey';
 
@@ -37,6 +37,12 @@ const worldFragment = /* glsl */ `
   uniform vec4 uMaskB;
   uniform float uExposureA;
   uniform float uExposureB;
+  uniform float uTime;
+  uniform float uSurfaceLateral;
+  uniform float uSurfacePush;
+  uniform float uSurfaceZoom;
+  uniform vec2 uSurfaceFocus;
+  uniform float uSurfaceYaw;
   varying vec2 vUv;
 
   vec2 cover(vec2 uv, vec2 image) {
@@ -64,8 +70,48 @@ const worldFragment = /* glsl */ `
     return 1.0 - smoothstep(mask.z - mask.w, mask.z + mask.w, length(delta));
   }
 
+  vec3 surfaceLayer(vec2 uv) {
+    vec2 coveredUv = cover(uv, vec2(2048.0, 1152.0));
+    vec2 screenDelta = uv - 0.5;
+    vec2 cameraUv = uSurfaceFocus + (coveredUv - 0.5) / uSurfaceZoom;
+    cameraUv.x += screenDelta.y * uSurfaceYaw / uSurfaceZoom;
+    cameraUv.y -= screenDelta.x * uSurfaceYaw * 0.18 / uSurfaceZoom;
+    cameraUv += uPointer * 0.006 * (1.0 - uSurfacePush) / uSurfaceZoom;
+
+    vec2 orbCenter = vec2(0.69, 0.705);
+    float imageAspect = 2048.0 / 1152.0;
+    vec2 orbVector = (cameraUv - orbCenter) * vec2(imageAspect, 1.0);
+    float orbDistance = length(orbVector);
+    float orbMask = 1.0 - smoothstep(0.215, 0.245, orbDistance);
+    float crystalMask = smoothstep(0.61, 0.92, cameraUv.x)
+      * (1.0 - smoothstep(0.46, 0.78, cameraUv.y));
+    float foregroundMask = max(orbMask, crystalMask * 0.78);
+
+    vec2 foregroundUv = cameraUv + vec2(
+      -0.013 * uSurfaceLateral * (1.0 - uSurfacePush),
+      sin(uTime * 0.34) * 0.0025 * (1.0 - uSurfacePush)
+    );
+    vec3 base = texture2D(tSurface, clamp(cameraUv, 0.001, 0.999)).rgb;
+    vec3 foreground = texture2D(tSurface, clamp(foregroundUv, 0.001, 0.999)).rgb;
+    vec3 color = mix(base, foreground, foregroundMask * 0.62);
+
+    vec2 orbNormal = normalize(orbVector + vec2(0.0001));
+    vec2 refraction = vec2(orbNormal.x / imageAspect, orbNormal.y)
+      * (0.008 + sin(uTime * 0.62 + orbDistance * 28.0) * 0.0018)
+      * orbMask;
+    vec3 refracted = texture2D(tSurface, clamp(cameraUv + refraction, 0.001, 0.999)).rgb;
+    color = mix(color, refracted, orbMask * 0.42);
+
+    float sweepPosition = fract(uTime * 0.035) * 1.65 - 0.3;
+    float sweep = 1.0 - smoothstep(0.0, 0.075, abs((uv.x + uv.y * 0.36) - sweepPosition));
+    color += vec3(1.0, 0.74, 0.52) * sweep * 0.018 * (1.0 - uSurfacePush);
+    float portalGlow = uSurfacePush * (1.0 - smoothstep(0.06, 0.72, distance(uv, vec2(0.5))));
+    color += vec3(0.16, 0.1, 0.22) * portalGlow;
+    return color;
+  }
+
   vec3 authoredLayer(float scene, vec2 uv, vec4 mask, float exposure) {
-    if (scene < 0.5) return sampleScene(scene, uv) * exposure;
+    if (scene < 0.5) return surfaceLayer(uv) * exposure;
     vec2 focal = mask.xy;
     vec2 baseUv = focal + (uv - focal) / uScale;
     vec2 foregroundUv = focal + (uv - focal) / (uScale + uLayerDepth);
@@ -218,6 +264,12 @@ export default function HomeWorld({ onReady, onFailure }: { onReady?: () => void
     const maskB = { value: authoredScenes.surface.foregroundMask };
     const exposureA = { value: 1 };
     const exposureB = { value: 1 };
+    const time = { value: 0 };
+    const surfaceLateral = { value: 0 };
+    const surfacePush = { value: 0 };
+    const surfaceZoom = { value: 1 };
+    const surfaceFocus = { value: [0.5, 0.5] };
+    const surfaceYaw = { value: 0 };
 
     const worldProgram = new Program(gl, {
       vertex,
@@ -246,6 +298,12 @@ export default function HomeWorld({ onReady, onFailure }: { onReady?: () => void
         uMaskB: maskB,
         uExposureA: exposureA,
         uExposureB: exposureB,
+        uTime: time,
+        uSurfaceLateral: surfaceLateral,
+        uSurfacePush: surfacePush,
+        uSurfaceZoom: surfaceZoom,
+        uSurfaceFocus: surfaceFocus,
+        uSurfaceYaw: surfaceYaw,
       },
     });
     new Mesh(gl, { geometry, program: worldProgram }).setParent(worldScene);
@@ -272,6 +330,7 @@ export default function HomeWorld({ onReady, onFailure }: { onReady?: () => void
     let scrollCurrent = 0;
     let slowFrames = 0;
     let lastFrame = 0;
+    let activeChapter = homeChapters[0].id;
     let sectionStops = homeChapters.map((_, index) => index / homeChapters.length);
     const pointerState = { x: 0, y: 0, targetX: 0, targetY: 0 };
 
@@ -280,6 +339,7 @@ export default function HomeWorld({ onReady, onFailure }: { onReady?: () => void
       const nextIndex = Math.min(journey.index + 1, authoredSceneOrder.length - 1);
       const activeAsset = authoredScenes[journey.chapter.sceneId];
       const nextAsset = authoredScenes[journey.nextChapter.sceneId];
+      const surfaceCamera = sampleSurfaceCamera(journey.chapter.id === 'surface' ? journey.localProgress : 1);
       sceneA.value = journey.index;
       sceneB.value = nextIndex;
       sceneMix.value = journey.transitionProgress;
@@ -289,7 +349,13 @@ export default function HomeWorld({ onReady, onFailure }: { onReady?: () => void
       maskB.value = nextAsset.foregroundMask;
       exposureA.value = activeAsset.exposure;
       exposureB.value = nextAsset.exposure;
+      surfaceLateral.value = surfaceCamera.lateral;
+      surfacePush.value = surfaceCamera.push;
+      surfaceZoom.value = surfaceCamera.zoom;
+      surfaceFocus.value = [...surfaceCamera.focus];
+      surfaceYaw.value = surfaceCamera.yaw;
       pointer.value = [pointerState.x, pointerState.y];
+      activeChapter = journey.chapter.id;
       shell.dataset.chapter = journey.chapter.id;
       shell.dataset.copyPhase = journey.copyPhase;
       shell.style.setProperty('--home-progress', journey.progress.toFixed(4));
@@ -326,6 +392,7 @@ export default function HomeWorld({ onReady, onFailure }: { onReady?: () => void
         }
       }
       lastFrame = timestamp;
+      time.value = timestamp * 0.001;
       scrollCurrent += (scrollTarget - scrollCurrent) * 0.16;
       pointerState.x += (pointerState.targetX - pointerState.x) * 0.18;
       pointerState.y += (pointerState.targetY - pointerState.y) * 0.18;
@@ -335,7 +402,7 @@ export default function HomeWorld({ onReady, onFailure }: { onReady?: () => void
       const moving = Math.abs(scrollTarget - scrollCurrent) > 0.00008
         || Math.abs(pointerState.targetX - pointerState.x) > 0.0008
         || Math.abs(pointerState.targetY - pointerState.y) > 0.0008;
-      if (moving) requestRender();
+      if (moving || activeChapter === 'surface') requestRender();
     };
 
     const requestRender = () => {

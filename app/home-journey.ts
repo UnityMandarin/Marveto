@@ -67,9 +67,39 @@ export interface JourneyFrame extends HomeJourneySample {
   foregroundOffset: number;
 }
 
+export interface SurfaceCameraFrame {
+  lateral: number;
+  push: number;
+  zoom: number;
+  focus: readonly [number, number];
+  yaw: number;
+}
+
+export const surfaceOrbFocus = [0.69, 0.705] as const;
+
 function smoothstep(start: number, end: number, value: number): number {
   const t = clampJourneyProgress((value - start) / Math.max(end - start, 0.0001));
   return t * t * (3 - 2 * t);
+}
+
+export function sampleSurfaceCamera(progress: number): SurfaceCameraFrame {
+  const clamped = clampJourneyProgress(progress);
+  const lateral = smoothstep(0.04, 0.62, clamped);
+  const push = smoothstep(0.56, 1, clamped);
+  const lateralFocus: readonly [number, number] = [
+    0.5 + 0.155 * lateral,
+    0.5 + 0.055 * lateral,
+  ];
+  return {
+    lateral,
+    push,
+    zoom: 1 + lateral * 0.1 + push * 5.35,
+    focus: [
+      lateralFocus[0] + (surfaceOrbFocus[0] - lateralFocus[0]) * push,
+      lateralFocus[1] + (surfaceOrbFocus[1] - lateralFocus[1]) * push,
+    ],
+    yaw: Math.sin(lateral * Math.PI) * (1 - push) * 0.11,
+  };
 }
 
 export function sampleHomeJourney(progress: number): HomeJourneySample {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { homeChapters, homeUltimateHref, mapHomeScrollProgress, resolveHomeQuality, sampleHomeJourney, sampleJourneyFrame, shouldUseHomeWebgl, textureCrossfadeWeights } from './home-journey';
+import { homeChapters, homeUltimateHref, mapHomeScrollProgress, resolveHomeQuality, sampleHomeJourney, sampleJourneyFrame, sampleSurfaceCamera, shouldUseHomeWebgl, surfaceOrbFocus, textureCrossfadeWeights } from './home-journey';
 import { authoredSceneOrder, authoredScenes, sceneForConcept } from './scene-registry';
 
 describe('home journey', () => {
@@ -86,7 +86,23 @@ describe('home journey', () => {
     expect(sceneForConcept('forma')?.desktopBase).toBe('/images/serein.webp');
   });
 
-  it('keeps the authored pearl hero unmasked and uses the crystal horizon for contact', () => {
+  it('moves laterally before pushing the camera into the hero crystal sphere', () => {
+    const opening = sampleSurfaceCamera(0);
+    const lateral = sampleSurfaceCamera(0.5);
+    const closing = sampleSurfaceCamera(1);
+    expect(opening).toMatchObject({ lateral: 0, push: 0, zoom: 1, focus: [0.5, 0.5], yaw: 0 });
+    expect(lateral.lateral).toBeGreaterThan(0.7);
+    expect(lateral.push).toBe(0);
+    expect(lateral.focus[0]).toBeGreaterThan(opening.focus[0]);
+    expect(lateral.yaw).toBeGreaterThan(0);
+    expect(closing.push).toBe(1);
+    expect(closing.zoom).toBeGreaterThan(6);
+    expect(closing.focus).toEqual(surfaceOrbFocus);
+    const zoomSamples = Array.from({ length: 21 }, (_, index) => sampleSurfaceCamera(index / 20).zoom);
+    zoomSamples.slice(1).forEach((zoom, index) => expect(zoom).toBeGreaterThanOrEqual(zoomSamples[index]));
+  });
+
+  it('keeps the authored pearl hero and crystal horizon asset mapping', () => {
     expect(homeChapters[0].camera).toEqual([1, 1]);
     expect(homeChapters[0].layerDepth).toBe(0);
     expect(authoredScenes.surface.desktopBase).toBe('/images/hero-surface-v3.webp');
