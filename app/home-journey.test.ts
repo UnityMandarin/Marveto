@@ -98,6 +98,8 @@ describe('home journey', () => {
     expect(turn.crack).toBe(0);
     expect(back.spin).toBe(1);
     expect(back.push).toBe(0);
+    expect(homeChapters[0].transitionStart).toBe(0.94);
+    expect(sampleSurfaceCamera(0.9).crack).toBe(1);
     expect(closing).toMatchObject({ spin: 1, push: 1, crack: 1 });
     expect(closing.zoom).toBeGreaterThan(7);
     expect(closing.focus).toEqual(surfaceOrbFocus);
