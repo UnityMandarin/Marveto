@@ -99,7 +99,7 @@ em { font-family: var(--font-editorial), Georgia, serif; font-weight: 500; }
 
 main { position: relative; z-index: 10; }
 .journey-chapter { --section-copy-opacity: 1; position: relative; display: block; height: 150svh; overflow: clip; padding: 0 clamp(24px, 5vw, 82px); }
-.hero-chapter { height: 160svh; }
+.hero-chapter { height: 190svh; }
 .signal-chapter { height: 150svh; }
 .project-chapter { height: 142svh; }
 .services-chapter { height: 390svh; }
@@ -126,9 +126,9 @@ main { position: relative; z-index: 10; }
 
 .hero-copy { width: min(760px, 55vw); justify-content: flex-start; padding-top: 19svh; }
 .hero-copy h1 { font-size: clamp(72px, 8.2vw, 132px); }
-.masked-line { display: block; overflow: hidden; }
-.masked-line > span, .masked-line > em { display: block; }
-.masked-line:nth-child(2) { margin-left: 6vw; }
+.hero-line { display: block; }
+.hero-line > span, .hero-line > em { display: block; }
+.hero-line:nth-child(2) { margin-left: 6vw; }
 .hero-summary { max-width: 460px; margin: 38px 0 0; font-size: clamp(13px, 1.1vw, 16px); line-height: 1.6; }
 .hero-actions { display: flex; align-items: center; gap: 27px; margin-top: 34px; }
 .glass-pill { display: inline-flex; align-items: center; justify-content: space-between; min-width: 190px; gap: 22px; padding: 15px 18px; border: 1px solid currentColor; border-radius: 999px; background: rgba(255,255,255,.08); backdrop-filter: blur(14px); text-transform: uppercase; letter-spacing: .1em; font-size: 8px; transition: background .35s ease, color .35s ease, transform .35s ease; }
@@ -274,7 +274,7 @@ main { position: relative; z-index: 10; }
 @media (max-width: 680px) {
   html { scroll-behavior: auto; }
   .journey-chapter { height: auto; min-height: 136svh; padding: 0 22px; }
-  .hero-chapter { min-height: 146svh; }
+  .hero-chapter { min-height: 170svh; }
   .signal-chapter { min-height: 142svh; }
   .project-chapter { min-height: 138svh; }
   .services-chapter { min-height: 490svh; }
@@ -284,7 +284,7 @@ main { position: relative; z-index: 10; }
   .chapter-copy { min-height: 100svh; }
   .hero-copy { width: 92vw; padding-top: 20svh; }
   .hero-copy h1 { font-size: clamp(55px, 17vw, 82px); line-height: .86; }
-  .masked-line:nth-child(2) { margin: 6px 0 0; }
+  .hero-line:nth-child(2) { margin: 6px 0 0; }
   .hero-summary { max-width: 77vw; margin-top: 27px; }
   .hero-actions { align-items: flex-start; flex-direction: column; gap: 19px; }
   .chapter-meta { display: none; }
