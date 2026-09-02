@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { assetPath } from './asset-path';
-import { heroScrollProgress, heroThreeVisibility, sampleHeroOrbit } from './hero-three';
+import { heroScrollProgress, heroThreeVisibility, sampleHeroOrbit, sampleHeroPortal } from './hero-three';
 
 const sourceSize = { width: 2048, height: 1152 };
 
@@ -85,6 +85,291 @@ function textureRegion(
   texture.generateMipmaps = true;
   texture.needsUpdate = true;
   return texture;
+}
+
+interface PortalWorld {
+  root: THREE.Group;
+  ocean: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshPhysicalMaterial>;
+  cloudLayer: THREE.Group;
+  cloudMaterial: THREE.MeshPhysicalMaterial;
+  transitionCloudLayer: THREE.Group;
+  transitionCloudMaterial: THREE.MeshPhysicalMaterial;
+  fades: Array<{ material: THREE.Material; opacity: number }>;
+  skyOpacity: { value: number };
+}
+
+function createIslandGeometry(seed: number, radius: number): THREE.ExtrudeGeometry {
+  const shape = new THREE.Shape();
+  const points = 13;
+  for (let index = 0; index < points; index += 1) {
+    const angle = index / points * Math.PI * 2;
+    const coastline = 1
+      + Math.sin(angle * 3 + seed * 1.7) * 0.18
+      + Math.cos(angle * 5 - seed * 0.8) * 0.1;
+    const x = Math.cos(angle) * radius * coastline;
+    const y = Math.sin(angle) * radius * coastline * (0.7 + (seed % 3) * 0.08);
+    if (index === 0) shape.moveTo(x, y);
+    else shape.lineTo(x, y);
+  }
+  shape.closePath();
+  const geometry = new THREE.ExtrudeGeometry(shape, {
+    depth: 0.42 + (seed % 4) * 0.08,
+    steps: 1,
+    bevelEnabled: true,
+    bevelSegments: 2,
+    bevelSize: radius * 0.07,
+    bevelThickness: 0.12,
+    curveSegments: 2,
+  });
+  geometry.rotateX(-Math.PI / 2);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+function createPortalWorld(): PortalWorld {
+  const root = new THREE.Group();
+  root.visible = false;
+
+  const fades: PortalWorld['fades'] = [];
+  const skyOpacity = { value: 0 };
+  const sky = new THREE.Mesh(
+    new THREE.SphereGeometry(28, 48, 24),
+    new THREE.ShaderMaterial({
+      side: THREE.BackSide,
+      transparent: true,
+      depthWrite: false,
+      uniforms: { uOpacity: skyOpacity },
+      vertexShader: `
+        varying float vSkyHeight;
+        void main() {
+          vSkyHeight = normalize(position).y * 0.5 + 0.5;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform float uOpacity;
+        varying float vSkyHeight;
+        void main() {
+          vec3 horizon = vec3(0.83, 0.72, 0.64);
+          vec3 middle = vec3(0.48, 0.66, 0.79);
+          vec3 zenith = vec3(0.19, 0.36, 0.58);
+          vec3 skyColor = mix(horizon, middle, smoothstep(0.2, 0.58, vSkyHeight));
+          skyColor = mix(skyColor, zenith, smoothstep(0.56, 1.0, vSkyHeight));
+          gl_FragColor = vec4(skyColor, uOpacity);
+        }
+      `,
+    }),
+  );
+  sky.renderOrder = -100;
+  root.add(sky);
+
+  const oceanGeometry = new THREE.PlaneGeometry(28, 28, 88, 88);
+  const oceanPositions = oceanGeometry.attributes.position;
+  for (let index = 0; index < oceanPositions.count; index += 1) {
+    const x = oceanPositions.getX(index);
+    const y = oceanPositions.getY(index);
+    const wave = Math.sin(x * 0.72 + y * 0.18) * 0.055
+      + Math.cos(y * 0.9 - x * 0.12) * 0.038
+      + Math.sin((x + y) * 1.7) * 0.018;
+    oceanPositions.setZ(index, wave);
+  }
+  oceanPositions.needsUpdate = true;
+  oceanGeometry.computeVertexNormals();
+  oceanGeometry.rotateX(-Math.PI / 2);
+  const oceanMaterial = new THREE.MeshPhysicalMaterial({
+    color: 0x176f91,
+    metalness: 0.08,
+    roughness: 0.2,
+    transmission: 0.08,
+    thickness: 0.7,
+    clearcoat: 1,
+    clearcoatRoughness: 0.08,
+    envMapIntensity: 1.5,
+    transparent: true,
+    opacity: 0,
+  });
+  const ocean = new THREE.Mesh(oceanGeometry, oceanMaterial);
+  ocean.position.y = -1.9;
+  ocean.receiveShadow = true;
+  root.add(ocean);
+  fades.push({ material: oceanMaterial, opacity: 0.96 });
+
+  const seabedMaterial = new THREE.MeshPhysicalMaterial({
+    color: 0x0b3445,
+    roughness: 0.72,
+    transparent: true,
+    opacity: 0,
+  });
+  const seabed = new THREE.Mesh(new THREE.CircleGeometry(18, 64), seabedMaterial);
+  seabed.rotation.x = -Math.PI / 2;
+  seabed.position.y = -2.22;
+  root.add(seabed);
+  fades.push({ material: seabedMaterial, opacity: 0.94 });
+
+  const islandTop = new THREE.MeshPhysicalMaterial({
+    color: 0x476f52,
+    roughness: 0.78,
+    clearcoat: 0.1,
+    transparent: true,
+    opacity: 0,
+  });
+  const islandCliff = new THREE.MeshPhysicalMaterial({
+    color: 0x59473b,
+    roughness: 0.9,
+    transparent: true,
+    opacity: 0,
+  });
+  const beachMaterial = new THREE.MeshPhysicalMaterial({
+    color: 0xd9b879,
+    roughness: 0.86,
+    transparent: true,
+    opacity: 0,
+  });
+  const vegetationMaterial = new THREE.MeshPhysicalMaterial({
+    color: 0x183f35,
+    roughness: 0.88,
+    transparent: true,
+    opacity: 0,
+  });
+  fades.push(
+    { material: islandTop, opacity: 1 },
+    { material: islandCliff, opacity: 1 },
+    { material: beachMaterial, opacity: 1 },
+    { material: vegetationMaterial, opacity: 0.96 },
+  );
+
+  const islandDefinitions = [
+    { x: -4.4, z: -2.6, radius: 2.25, seed: 1, rotation: 0.2 },
+    { x: 0.2, z: -3.8, radius: 1.55, seed: 2, rotation: -0.45 },
+    { x: 3.9, z: -1.1, radius: 2.05, seed: 3, rotation: 0.7 },
+    { x: -1.8, z: 1.3, radius: 1.12, seed: 4, rotation: -0.2 },
+    { x: 5.8, z: 3.2, radius: 0.9, seed: 5, rotation: 0.35 },
+    { x: -6.2, z: 3.8, radius: 1.35, seed: 6, rotation: -0.75 },
+    { x: 1.7, z: 4.6, radius: 0.72, seed: 7, rotation: 0.9 },
+  ] as const;
+  islandDefinitions.forEach((definition) => {
+    const beach = new THREE.Mesh(
+      createIslandGeometry(definition.seed + 17, definition.radius * 1.1),
+      beachMaterial,
+    );
+    beach.position.set(definition.x, -1.91, definition.z);
+    beach.rotation.y = definition.rotation;
+    beach.scale.y = 0.28;
+    beach.receiveShadow = true;
+    root.add(beach);
+
+    const island = new THREE.Mesh(
+      createIslandGeometry(definition.seed, definition.radius),
+      [islandTop, islandCliff],
+    );
+    island.position.set(definition.x, -1.82, definition.z);
+    island.rotation.y = definition.rotation;
+    island.castShadow = true;
+    island.receiveShadow = true;
+    root.add(island);
+
+    const treeGeometry = new THREE.ConeGeometry(
+      Math.max(0.08, definition.radius * 0.055),
+      Math.max(0.32, definition.radius * 0.24),
+      7,
+    );
+    for (let treeIndex = 0; treeIndex < 5; treeIndex += 1) {
+      const treeAngle = treeIndex * 2.39996 + definition.seed;
+      const treeDistance = definition.radius * (0.18 + (treeIndex % 3) * 0.17);
+      const tree = new THREE.Mesh(treeGeometry, vegetationMaterial);
+      tree.position.set(
+        definition.x + Math.cos(treeAngle) * treeDistance,
+        -1.12 + (definition.seed % 3) * 0.035,
+        definition.z + Math.sin(treeAngle) * treeDistance * 0.72,
+      );
+      tree.castShadow = true;
+      root.add(tree);
+    }
+  });
+
+  const cloudLayer = new THREE.Group();
+  const cloudGeometry = new THREE.SphereGeometry(0.46, 20, 14);
+  const cloudMaterial = new THREE.MeshPhysicalMaterial({
+    color: 0xfff9f1,
+    roughness: 0.82,
+    transmission: 0.14,
+    thickness: 0.5,
+    transparent: true,
+    opacity: 0,
+    depthWrite: false,
+  });
+  for (let cluster = 0; cluster < 9; cluster += 1) {
+    const angle = cluster * 2.39996;
+    const distance = 3.3 + (cluster % 4) * 1.55;
+    const centerX = Math.cos(angle) * distance;
+    const centerZ = Math.sin(angle) * distance;
+    for (let puff = 0; puff < 5; puff += 1) {
+      const cloud = new THREE.Mesh(cloudGeometry, cloudMaterial);
+      cloud.position.set(
+        centerX + Math.sin(puff * 2.1 + cluster) * 0.72,
+        0.35 + (cluster % 3) * 0.42 + Math.cos(puff * 1.4) * 0.18,
+        centerZ + Math.cos(puff * 1.7 + cluster) * 0.56,
+      );
+      cloud.scale.set(1.18 + puff * 0.11, 0.5 + (puff % 2) * 0.14, 0.86 + (cluster % 2) * 0.16);
+      cloudLayer.add(cloud);
+    }
+  }
+  root.add(cloudLayer);
+
+  // A short cloud tunnel sits over the orb during the push-in. Rendering these
+  // puffs without depth testing lets the cloud shapes emerge from the orb's
+  // procedural surface before the sphere dissolves into the aerial world.
+  const transitionCloudLayer = new THREE.Group();
+  const transitionCloudGeometry = new THREE.SphereGeometry(0.52, 24, 16);
+  const transitionCloudMaterial = new THREE.MeshPhysicalMaterial({
+    color: 0xfffbf5,
+    emissive: 0x5a718c,
+    emissiveIntensity: 0.16,
+    roughness: 0.92,
+    transmission: 0.08,
+    thickness: 0.38,
+    transparent: true,
+    opacity: 0,
+    depthWrite: false,
+    depthTest: false,
+  });
+  for (let puff = 0; puff < 28; puff += 1) {
+    const cloud = new THREE.Mesh(transitionCloudGeometry, transitionCloudMaterial);
+    const band = Math.floor(puff / 7);
+    const angle = puff * 2.39996 + band * 0.72;
+    const radius = 0.48 + (puff % 4) * 0.3;
+    cloud.position.set(
+      1.72 - band * 0.46 + Math.sin(puff * 1.17) * 0.14,
+      Math.sin(angle) * radius * 0.64 + 0.08,
+      Math.cos(angle) * radius,
+    );
+    const puffScale = 0.62 + (puff % 5) * 0.13;
+    cloud.scale.set(puffScale * 1.35, puffScale * 0.66, puffScale);
+    cloud.renderOrder = 40;
+    transitionCloudLayer.add(cloud);
+  }
+  root.add(transitionCloudLayer);
+
+  const worldSun = new THREE.DirectionalLight(0xffd6a5, 4.8);
+  worldSun.position.set(-7, 10, 5);
+  worldSun.castShadow = true;
+  worldSun.shadow.mapSize.set(1024, 1024);
+  worldSun.shadow.camera.left = -12;
+  worldSun.shadow.camera.right = 12;
+  worldSun.shadow.camera.top = 12;
+  worldSun.shadow.camera.bottom = -12;
+  root.add(worldSun);
+
+  return {
+    root,
+    ocean,
+    cloudLayer,
+    cloudMaterial,
+    transitionCloudLayer,
+    transitionCloudMaterial,
+    fades,
+    skyOpacity,
+  };
 }
 
 export default function HeroThreeWorld() {
@@ -181,6 +466,14 @@ export default function HeroThreeWorld() {
     let lastScrollAt = Number.NEGATIVE_INFINITY;
     const pointer = new THREE.Vector2();
     const textures: THREE.Texture[] = [];
+    const sculptureObjects: THREE.Object3D[] = [];
+    const atmosphereObjects: THREE.Object3D[] = [];
+    const orbTransition = {
+      cloudMorph: { value: 0 },
+      time: { value: 0 },
+    };
+    let sphere: THREE.Mesh<THREE.SphereGeometry, THREE.MeshPhysicalMaterial> | null = null;
+    let portalWorld: PortalWorld | null = null;
 
     const loader = new THREE.TextureLoader();
     loader.load(
@@ -246,6 +539,7 @@ export default function HeroThreeWorld() {
         pyramid.receiveShadow = true;
         pyramid.rotation.y = -0.08;
         sceneRoot.add(pyramid);
+        sculptureObjects.push(pyramid);
 
         const sphereMaterial = new THREE.MeshPhysicalMaterial({
           map: sphereMap,
@@ -263,9 +557,49 @@ export default function HeroThreeWorld() {
           envMapIntensity: 1.75,
         });
         sphereMaterial.onBeforeCompile = (shader) => {
+          shader.uniforms.uCloudMorph = orbTransition.cloudMorph;
+          shader.uniforms.uOrbTime = orbTransition.time;
+          shader.fragmentShader = shader.fragmentShader.replace(
+            'void main() {',
+            `uniform float uCloudMorph;
+            uniform float uOrbTime;
+            float orbHash(vec2 point) {
+              return fract(sin(dot(point, vec2(127.1, 311.7))) * 43758.5453123);
+            }
+            float orbNoise(vec2 point) {
+              vec2 cell = floor(point);
+              vec2 local = fract(point);
+              local = local * local * (3.0 - 2.0 * local);
+              float a = orbHash(cell);
+              float b = orbHash(cell + vec2(1.0, 0.0));
+              float c = orbHash(cell + vec2(0.0, 1.0));
+              float d = orbHash(cell + vec2(1.0, 1.0));
+              return mix(mix(a, b, local.x), mix(c, d, local.x), local.y);
+            }
+            float orbFbm(vec2 point) {
+              float value = 0.0;
+              float amplitude = 0.55;
+              for (int octave = 0; octave < 5; octave++) {
+                value += orbNoise(point) * amplitude;
+                point = point * 2.03 + vec2(4.1, 7.7);
+                amplitude *= 0.48;
+              }
+              return value;
+            }
+            void main() {`,
+          );
           shader.fragmentShader = shader.fragmentShader.replace(
             '#include <map_fragment>',
             `#include <map_fragment>
+            vec2 orbCloudUv = vMapUv * vec2(18.0, 10.0) + vec2(uOrbTime * 0.018, 0.0);
+            float orbCloudField = orbFbm(orbCloudUv);
+            float orbCloudBody = smoothstep(0.43, 0.62, orbCloudField);
+            float orbCloudDetail = smoothstep(0.5, 0.72, orbFbm(orbCloudUv * 1.85 + 3.2));
+            vec3 orbCloudShadow = vec3(0.16, 0.27, 0.42);
+            vec3 orbCloudLight = vec3(1.0, 0.985, 0.95);
+            vec3 orbCloudColor = mix(orbCloudShadow, orbCloudLight, orbCloudBody);
+            orbCloudColor += orbCloudDetail * vec3(0.11, 0.09, 0.15);
+            diffuseColor.rgb = mix(diffuseColor.rgb, orbCloudColor, uCloudMorph);
             float orbLuma = dot(diffuseColor.rgb, vec3(0.2126, 0.7152, 0.0722));
             float orbMaxChannel = max(max(diffuseColor.r, diffuseColor.g), diffuseColor.b);
             float orbMinChannel = min(min(diffuseColor.r, diffuseColor.g), diffuseColor.b);
@@ -283,14 +617,29 @@ export default function HeroThreeWorld() {
             float orbWhiteChroma = orbWhiteMax - orbWhiteMin;
             float orbWhiteMask = smoothstep(0.42, 0.9, orbWhiteLuma)
               * (1.0 - smoothstep(0.045, 0.15, orbWhiteChroma));
-            totalEmissiveRadiance += vec3(0.34, 0.325, 0.31) * orbWhiteMask;`,
+            totalEmissiveRadiance += vec3(0.34, 0.325, 0.31) * orbWhiteMask;
+            vec3 orbCloudEmission = mix(
+              vec3(0.025, 0.065, 0.13),
+              vec3(0.92, 0.95, 0.98),
+              orbCloudBody
+            );
+            totalEmissiveRadiance += orbCloudEmission * uCloudMorph * 0.82;`,
           );
         };
-        sphereMaterial.customProgramCacheKey = () => 'orb-selective-color-v1';
-        const sphere = new THREE.Mesh(new THREE.SphereGeometry(1.28, 96, 64), sphereMaterial);
+        sphereMaterial.customProgramCacheKey = () => 'orb-cloud-portal-v2';
+        sphereMaterial.transparent = true;
+        sphere = new THREE.Mesh(new THREE.SphereGeometry(1.28, 96, 64), sphereMaterial);
         sphere.position.set(0.52, 2.65, -1.18);
         sphere.castShadow = true;
         sceneRoot.add(sphere);
+
+        portalWorld = createPortalWorld();
+        portalWorld.root.position.set(
+          sceneRoot.position.x + sphere.position.x,
+          sceneRoot.position.y + sphere.position.y,
+          sphere.position.z,
+        );
+        scene.add(portalWorld.root);
 
         const crystalMaterial = new THREE.MeshPhysicalMaterial({
           map: crystalMap,
@@ -343,6 +692,7 @@ export default function HeroThreeWorld() {
           crystal.castShadow = true;
           crystal.receiveShadow = true;
           sceneRoot.add(crystal);
+          sculptureObjects.push(crystal);
         });
 
 
@@ -372,6 +722,7 @@ export default function HeroThreeWorld() {
         backVeil.position.set(3.5, 2.2, -8.5);
         backVeil.rotation.y = -0.2;
         scene.add(backVeil);
+        atmosphereObjects.push(backVeil);
 
         const sideVeil = backVeil.clone();
         sideVeil.geometry = veilGeometry.clone();
@@ -381,6 +732,7 @@ export default function HeroThreeWorld() {
         sideVeil.position.set(-7.5, 0.6, 1.5);
         sideVeil.rotation.set(0, Math.PI / 2.35, 0.08);
         scene.add(sideVeil);
+        atmosphereObjects.push(sideVeil);
 
         const particleCount = window.innerWidth >= 1180 ? 760 : 420;
         const particlePositions = new Float32Array(particleCount * 3);
@@ -404,6 +756,7 @@ export default function HeroThreeWorld() {
           }),
         );
         scene.add(particles);
+        atmosphereObjects.push(particles);
 
         host.dataset.ready = 'true';
         shell.dataset.threeReady = 'true';
@@ -446,6 +799,15 @@ export default function HeroThreeWorld() {
       measureScroll();
     };
 
+    const orbitPosition = new THREE.Vector3();
+    const orbitTarget = new THREE.Vector3();
+    const orbCenter = new THREE.Vector3();
+    const orbApproach = new THREE.Vector3();
+    const worldCameraPosition = new THREE.Vector3();
+    const worldCameraTarget = new THREE.Vector3();
+    const openingFog = new THREE.Color(0xd9cec4);
+    const worldFog = new THREE.Color(0x8ca7b7);
+
     const render = () => {
       frame = requestAnimationFrame(render);
       const elapsed = clock.getElapsedTime();
@@ -453,18 +815,90 @@ export default function HeroThreeWorld() {
       lastElapsed = elapsed;
       if (performance.now() - lastScrollAt > 700) idleAngle += delta * 0.055;
       progressCurrent += (progressTarget - progressCurrent) * 0.075;
-      const orbit = sampleHeroOrbit(progressCurrent, idleAngle);
-      const loadFramingLift = 0.73 * (1 - progressCurrent) * (1 - progressCurrent);
+      const portal = sampleHeroPortal(progressCurrent);
+      const orbit = sampleHeroOrbit(portal.orbitProgress, idleAngle);
+      const loadFramingLift = 0.73 * (1 - portal.orbitProgress) * (1 - portal.orbitProgress);
       const opacity = heroThreeVisibility(progressCurrent);
       host.style.opacity = opacity.toFixed(4);
       shell.style.setProperty('--hero-three-opacity', opacity.toFixed(4));
+      shell.dataset.heroPortal = portal.worldReveal > 0.94
+        ? 'world'
+        : portal.cloudMorph > 0.08
+          ? 'clouds'
+          : portal.zoom > 0.04
+            ? 'zoom'
+            : 'orbit';
 
-      camera.position.set(
+      orbitPosition.set(
         sceneRoot.position.x + 0.64 + Math.sin(orbit.angle) * orbit.radius,
         orbit.elevation + loadFramingLift + pointer.y * 0.11,
         Math.cos(orbit.angle) * orbit.radius,
       );
-      target.set(sceneRoot.position.x - 0.64 + pointer.x * 0.09, 0.55 + loadFramingLift + pointer.y * 0.06, 0);
+      orbitTarget.set(
+        sceneRoot.position.x - 0.64 + pointer.x * 0.09,
+        0.55 + loadFramingLift + pointer.y * 0.06,
+        0,
+      );
+      orbCenter.set(
+        sceneRoot.position.x + 0.52,
+        sceneRoot.position.y + 2.65,
+        -1.18,
+      );
+      orbApproach.set(orbCenter.x + 1.82, orbCenter.y + 0.08, orbCenter.z + 0.14);
+      camera.position.copy(orbitPosition).lerp(orbApproach, portal.zoom);
+      target.copy(orbitTarget).lerp(orbCenter, portal.zoom);
+
+      orbTransition.cloudMorph.value = portal.cloudMorph;
+      orbTransition.time.value = elapsed;
+      if (sphere) {
+        const sphereFade = Math.min(1, Math.max(0, (portal.worldReveal - 0.22) / 0.78));
+        const sphereOpacity = Math.pow(1 - sphereFade, 1.18);
+        sphere.visible = sphereOpacity > 0.008;
+        sphere.material.opacity = sphereOpacity;
+        sphere.material.depthWrite = sphereOpacity > 0.55;
+        sphere.material.transmission = 0.28 * (1 - portal.cloudMorph) + 0.025 * portal.cloudMorph;
+        sphere.material.roughness = 0.08 + portal.cloudMorph * 0.66;
+        sphere.material.envMapIntensity = 1.75 - portal.cloudMorph * 0.92;
+        sphere.material.iridescence = 1 - portal.cloudMorph * 0.96;
+        sphere.material.clearcoat = 1 - portal.cloudMorph * 0.72;
+        const sphereScale = 1 + portal.zoom * 0.1 + portal.cloudMorph * 0.07;
+        sphere.scale.setScalar(sphereScale);
+        sphere.rotation.y = elapsed * 0.025 + portal.cloudMorph * 0.38;
+      }
+
+      const sculptureVisible = portal.worldReveal < 0.32;
+      sculptureObjects.forEach((object) => { object.visible = sculptureVisible; });
+      const atmosphereVisible = portal.worldReveal < 0.18;
+      atmosphereObjects.forEach((object) => { object.visible = atmosphereVisible; });
+
+      if (portalWorld) {
+        portalWorld.root.visible = portal.cloudMorph > 0.04;
+        const worldScale = 0.62 + portal.worldReveal * 0.38;
+        portalWorld.root.scale.setScalar(worldScale);
+        portalWorld.root.rotation.y = -0.16 + portal.worldSettle * 0.3;
+        portalWorld.fades.forEach(({ material, opacity: finalOpacity }) => {
+          material.opacity = finalOpacity * portal.worldReveal;
+        });
+        portalWorld.cloudMaterial.opacity = 0.66 * portal.cloudMorph;
+        const transitionCloudStrength = portal.cloudMorph * (1 - portal.worldReveal);
+        portalWorld.transitionCloudMaterial.opacity = 0.76 * Math.pow(transitionCloudStrength, 0.72);
+        portalWorld.skyOpacity.value = Math.min(1, Math.max(0, (portal.worldReveal - 0.16) / 0.84));
+        portalWorld.ocean.position.y = -1.9 + Math.sin(elapsed * 0.42) * 0.022;
+        portalWorld.cloudLayer.position.x = Math.sin(elapsed * 0.08) * 0.42;
+        portalWorld.cloudLayer.position.z = Math.cos(elapsed * 0.065) * 0.3;
+        portalWorld.transitionCloudLayer.rotation.x = elapsed * 0.012;
+        portalWorld.transitionCloudLayer.rotation.y = elapsed * -0.018;
+
+        worldCameraPosition.set(orbCenter.x + 5.8, orbCenter.y + 8.1, orbCenter.z + 10.6);
+        worldCameraTarget.set(orbCenter.x, orbCenter.y - 1.35, orbCenter.z);
+        camera.position.lerp(worldCameraPosition, portal.worldSettle);
+        target.lerp(worldCameraTarget, portal.worldSettle);
+      }
+
+      if (scene.fog instanceof THREE.FogExp2) {
+        scene.fog.color.lerpColors(openingFog, worldFog, portal.worldReveal);
+        scene.fog.density = 0.026 - portal.worldReveal * 0.012;
+      }
       camera.lookAt(target);
       renderer.render(scene, camera);
     };
@@ -483,6 +917,7 @@ export default function HeroThreeWorld() {
       window.removeEventListener('resize', resize);
       window.removeEventListener('pointermove', pointerMove);
       shell.removeAttribute('data-three-ready');
+      shell.removeAttribute('data-hero-portal');
       shell.style.removeProperty('--hero-three-opacity');
       scene.traverse((object) => {
         if (!(object instanceof THREE.Mesh)) return;

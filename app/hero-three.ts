@@ -4,6 +4,14 @@ export interface HeroOrbitFrame {
   elevation: number;
 }
 
+export interface HeroPortalFrame {
+  orbitProgress: number;
+  zoom: number;
+  cloudMorph: number;
+  worldReveal: number;
+  worldSettle: number;
+}
+
 export const heroOrbitStart = -Math.PI * 0.06;
 export const heroOrbitSweep = Math.PI;
 
@@ -26,6 +34,17 @@ export function sampleHeroOrbit(progress: number, idleAngle: number): HeroOrbitF
   };
 }
 
+export function sampleHeroPortal(progress: number): HeroPortalFrame {
+  const clamped = clampHeroProgress(progress);
+  return {
+    orbitProgress: clampHeroProgress(clamped / 0.58),
+    zoom: smoothstep(0.58, 0.78, clamped),
+    cloudMorph: smoothstep(0.65, 0.8, clamped),
+    worldReveal: smoothstep(0.8, 0.93, clamped),
+    worldSettle: smoothstep(0.86, 0.985, clamped),
+  };
+}
+
 export function heroScrollProgress(options: {
   scrollY: number;
   sectionTop: number;
@@ -37,5 +56,5 @@ export function heroScrollProgress(options: {
 }
 
 export function heroThreeVisibility(progress: number): number {
-  return 1 - smoothstep(0.9, 1, clampHeroProgress(progress));
+  return 1 - smoothstep(0.985, 1, clampHeroProgress(progress));
 }

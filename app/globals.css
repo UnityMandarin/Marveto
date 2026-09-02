@@ -73,6 +73,9 @@ em { font-family: var(--font-editorial), Georgia, serif; font-weight: 500; }
 .hero-three-world[data-ready='true'] { opacity: 1; }
 .hero-three-world[data-failed='true'], .hero-three-world[data-fallback='true'] { display: none; }
 .hero-three-world canvas { display: block; }
+.site-shell[data-hero-portal='zoom'] .hero-copy { opacity: .12; }
+.site-shell[data-hero-portal='clouds'] .hero-copy,
+.site-shell[data-hero-portal='world'] .hero-copy { opacity: 0; }
 
 .site-header {
   position: fixed; z-index: 140; inset: 0 0 auto; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
@@ -105,7 +108,7 @@ em { font-family: var(--font-editorial), Georgia, serif; font-weight: 500; }
 
 main { position: relative; z-index: 10; }
 .journey-chapter { --section-copy-opacity: 1; position: relative; display: block; height: 150svh; overflow: clip; padding: 0 clamp(24px, 5vw, 82px); }
-.hero-chapter { height: 240svh; }
+.hero-chapter { height: 360svh; }
 .signal-chapter { height: 150svh; }
 .project-chapter { height: 142svh; }
 .services-chapter { height: 390svh; }
@@ -280,7 +283,7 @@ main { position: relative; z-index: 10; }
 @media (max-width: 680px) {
   html { scroll-behavior: auto; }
   .journey-chapter { height: auto; min-height: 136svh; padding: 0 22px; }
-  .hero-chapter { min-height: 210svh; }
+  .hero-chapter { min-height: 320svh; }
   .signal-chapter { min-height: 142svh; }
   .project-chapter { min-height: 138svh; }
   .services-chapter { min-height: 490svh; }

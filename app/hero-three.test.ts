@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { heroOrbitStart, heroOrbitSweep, heroScrollProgress, heroThreeVisibility, sampleHeroOrbit } from './hero-three';
+import {
+  heroOrbitStart,
+  heroOrbitSweep,
+  heroScrollProgress,
+  heroThreeVisibility,
+  sampleHeroOrbit,
+  sampleHeroPortal,
+} from './hero-three';
 
 describe('three-dimensional homepage hero', () => {
   it('keeps the mesh fixed while the camera completes a partial 180 degree orbit', () => {
@@ -18,11 +25,25 @@ describe('three-dimensional homepage hero', () => {
   });
 
   it('maps the sticky hero runway onto the orbit and fades only at the handoff', () => {
-    const base = { sectionTop: 0, sectionHeight: 2400, viewportHeight: 1000 };
+    const base = { sectionTop: 0, sectionHeight: 3600, viewportHeight: 1000 };
     expect(heroScrollProgress({ ...base, scrollY: 0 })).toBe(0);
-    expect(heroScrollProgress({ ...base, scrollY: 700 })).toBe(0.5);
-    expect(heroScrollProgress({ ...base, scrollY: 1400 })).toBe(1);
-    expect(heroThreeVisibility(0.89)).toBe(1);
+    expect(heroScrollProgress({ ...base, scrollY: 1300 })).toBe(0.5);
+    expect(heroScrollProgress({ ...base, scrollY: 2600 })).toBe(1);
+    expect(heroThreeVisibility(0.98)).toBe(1);
     expect(heroThreeVisibility(1)).toBe(0);
+  });
+
+  it('holds the orbit before zooming through clouds into the island world', () => {
+    expect(sampleHeroPortal(0.5)).toMatchObject({ zoom: 0, cloudMorph: 0, worldReveal: 0 });
+    expect(sampleHeroPortal(0.7).zoom).toBeGreaterThan(0.5);
+    expect(sampleHeroPortal(0.72).cloudMorph).toBeGreaterThan(0);
+    expect(sampleHeroPortal(0.84).worldReveal).toBeGreaterThan(0);
+    expect(sampleHeroPortal(1)).toMatchObject({
+      orbitProgress: 1,
+      zoom: 1,
+      cloudMorph: 1,
+      worldReveal: 1,
+      worldSettle: 1,
+    });
   });
 });
