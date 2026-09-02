@@ -2,6 +2,7 @@
 
 import { FormEvent, MouseEvent, useEffect, useRef, useState } from 'react';
 import { assetPath, sitePath } from './asset-path';
+import HeroThreeWorld from './HeroThreeWorld';
 import HomeWorld from './HomeWorld';
 import { homeChapters, homeUltimateHref, mapHomeScrollProgress, sampleHomeJourney, sampleJourneyFrame } from './home-journey';
 import { applyPackageSelection, buildMailto, formatInquiry, Inquiry, InquiryErrors, validateInquiry } from './inquiry';
@@ -202,6 +203,7 @@ export default function MarvetoExperience() {
           ))}
         </div>
         <HomeWorld />
+        <HeroThreeWorld />
       </div>
 
       <div className="route-transition" aria-hidden="true">

@@ -1,0 +1,375 @@
+'use client';
+
+import { useEffect, useRef } from 'react';
+import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { assetPath } from './asset-path';
+import { heroScrollProgress, heroThreeVisibility, sampleHeroOrbit } from './hero-three';
+
+const sourceSize = { width: 2048, height: 1152 };
+
+function webglAvailable(): boolean {
+  try {
+    const canvas = document.createElement('canvas');
+    return Boolean(canvas.getContext('webgl2') || canvas.getContext('webgl'));
+  } catch {
+    return false;
+  }
+}
+
+function textureRegion(
+  source: THREE.Texture,
+  renderer: THREE.WebGLRenderer,
+  region: { x: number; y: number; width: number; height: number },
+): THREE.Texture {
+  const texture = source.clone();
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  texture.offset.set(region.x / sourceSize.width, 1 - (region.y + region.height) / sourceSize.height);
+  texture.repeat.set(region.width / sourceSize.width, region.height / sourceSize.height);
+  texture.anisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), 16);
+  texture.generateMipmaps = true;
+  texture.needsUpdate = true;
+  return texture;
+}
+
+export default function HeroThreeWorld() {
+  const hostRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const host = hostRef.current;
+    const shell = host?.closest<HTMLElement>('.site-shell');
+    const hero = shell?.querySelector<HTMLElement>('.hero-chapter');
+    if (!host || !shell || !hero) return;
+
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!webglAvailable() || reducedMotion) {
+      host.dataset.fallback = 'true';
+      return;
+    }
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.08;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, window.innerWidth >= 1180 ? 2 : 1.35));
+    renderer.domElement.setAttribute('aria-hidden', 'true');
+    renderer.domElement.setAttribute('role', 'presentation');
+    host.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0xd9cec4, 0.026);
+    const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 80);
+    const target = new THREE.Vector3(0.8, 0.55, 0);
+    const clock = new THREE.Clock();
+    const sceneRoot = new THREE.Group();
+    sceneRoot.position.set(2.15, -0.15, 0);
+    scene.add(sceneRoot);
+
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    const room = new RoomEnvironment();
+    const environment = pmrem.fromScene(room, 0.045).texture;
+    scene.environment = environment;
+
+    const hemi = new THREE.HemisphereLight(0xfff2e4, 0x4d4a58, 2.35);
+    scene.add(hemi);
+    const key = new THREE.DirectionalLight(0xffe3bd, 5.4);
+    key.position.set(-5, 9, 7);
+    key.castShadow = true;
+    key.shadow.mapSize.set(2048, 2048);
+    key.shadow.camera.near = 0.5;
+    key.shadow.camera.far = 28;
+    key.shadow.camera.left = -9;
+    key.shadow.camera.right = 9;
+    key.shadow.camera.top = 9;
+    key.shadow.camera.bottom = -9;
+    scene.add(key);
+    const rim = new THREE.PointLight(0x7a83ff, 14, 16, 1.8);
+    rim.position.set(5.5, 3.5, -3.5);
+    scene.add(rim);
+
+    let disposed = false;
+    let frame = 0;
+    let progressTarget = 0;
+    let progressCurrent = 0;
+    const pointer = new THREE.Vector2();
+    const textures: THREE.Texture[] = [];
+
+    const loader = new THREE.TextureLoader();
+    loader.load(
+      assetPath('/images/hero-surface-v3.webp'),
+      (source) => {
+        if (disposed) {
+          source.dispose();
+          return;
+        }
+        source.colorSpace = THREE.SRGBColorSpace;
+        source.anisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), 16);
+        textures.push(source);
+
+        const pyramidMap = textureRegion(source, renderer, { x: 365, y: 535, width: 1683, height: 617 });
+        const sphereMap = textureRegion(source, renderer, { x: 1060, y: 70, width: 610, height: 585 });
+        const crystalMap = textureRegion(source, renderer, { x: 1580, y: 245, width: 468, height: 907 });
+        const backdropMap = textureRegion(source, renderer, { x: 0, y: 0, width: 1050, height: 1152 });
+        textures.push(pyramidMap, sphereMap, crystalMap, backdropMap);
+
+        const pyramidMaterial = new THREE.MeshPhysicalMaterial({
+          map: pyramidMap,
+          color: 0xfff8ef,
+          metalness: 0.18,
+          roughness: 0.34,
+          clearcoat: 0.72,
+          clearcoatRoughness: 0.24,
+          envMapIntensity: 1.35,
+        });
+        const pyramidBase = new THREE.MeshPhysicalMaterial({ color: 0x312f3b, metalness: 0.28, roughness: 0.48 });
+        const pyramid = new THREE.Mesh(
+          new THREE.ConeGeometry(3.35, 4.15, 4, 1, false, Math.PI / 4),
+          [pyramidMaterial, pyramidBase],
+        );
+        pyramid.castShadow = true;
+        pyramid.receiveShadow = true;
+        pyramid.rotation.y = -0.08;
+        sceneRoot.add(pyramid);
+
+        const sphereMaterial = new THREE.MeshPhysicalMaterial({
+          map: sphereMap,
+          color: 0xfff7f1,
+          metalness: 0.04,
+          roughness: 0.08,
+          transmission: 0.28,
+          thickness: 1.15,
+          ior: 1.34,
+          iridescence: 1,
+          iridescenceIOR: 1.3,
+          iridescenceThicknessRange: [120, 720],
+          clearcoat: 1,
+          clearcoatRoughness: 0.06,
+          envMapIntensity: 2.1,
+        });
+        const sphere = new THREE.Mesh(new THREE.SphereGeometry(1.28, 96, 64), sphereMaterial);
+        sphere.position.y = 3.22;
+        sphere.castShadow = true;
+        sceneRoot.add(sphere);
+
+        const crystalMaterial = new THREE.MeshPhysicalMaterial({
+          map: crystalMap,
+          color: 0xffc5d8,
+          metalness: 0.02,
+          roughness: 0.13,
+          transmission: 0.5,
+          thickness: 1.45,
+          ior: 1.46,
+          iridescence: 0.58,
+          iridescenceIOR: 1.32,
+          iridescenceThicknessRange: [180, 520],
+          clearcoat: 1,
+          clearcoatRoughness: 0.08,
+          envMapIntensity: 1.9,
+        });
+        const crystalDefinitions = [
+          { position: [3.15, 0.05, -0.65], scale: [0.95, 3.6, 0.9], rotation: [0.05, -0.28, -0.16] },
+          { position: [4.2, -0.65, 0.35], scale: [0.8, 2.7, 0.82], rotation: [-0.03, 0.42, 0.18] },
+          { position: [2.55, -0.95, 1.05], scale: [0.58, 2.05, 0.62], rotation: [0.14, 0.2, -0.3] },
+          { position: [4.65, -1.15, -1.15], scale: [0.52, 1.75, 0.55], rotation: [-0.18, -0.12, 0.34] },
+        ] as const;
+        crystalDefinitions.forEach((definition, index) => {
+          const geometry = new THREE.CylinderGeometry(0.54, 0.86, 1.8, 6, 1, false);
+          const positions = geometry.attributes.position;
+          for (let vertex = 0; vertex < positions.count; vertex += 1) {
+            if (positions.getY(vertex) > 0.88) {
+              positions.setX(vertex, positions.getX(vertex) * 0.1);
+              positions.setZ(vertex, positions.getZ(vertex) * 0.1);
+            }
+          }
+          positions.needsUpdate = true;
+          geometry.computeVertexNormals();
+          const crystal = new THREE.Mesh(geometry, index === 0 ? crystalMaterial : crystalMaterial.clone());
+          crystal.position.set(
+            definition.position[0],
+            definition.position[1],
+            definition.position[2],
+          );
+          crystal.scale.set(
+            definition.scale[0],
+            definition.scale[1],
+            definition.scale[2],
+          );
+          crystal.rotation.set(
+            definition.rotation[0],
+            definition.rotation[1],
+            definition.rotation[2],
+          );
+          crystal.castShadow = true;
+          crystal.receiveShadow = true;
+          sceneRoot.add(crystal);
+        });
+
+        const floorMaterial = new THREE.MeshPhysicalMaterial({
+          map: backdropMap,
+          color: 0xe5dbd2,
+          roughness: 0.62,
+          metalness: 0.03,
+          envMapIntensity: 0.65,
+        });
+        const floor = new THREE.Mesh(new THREE.PlaneGeometry(48, 48), floorMaterial);
+        floor.rotation.x = -Math.PI / 2;
+        floor.position.y = -2.08;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+        const dome = new THREE.Mesh(
+          new THREE.SphereGeometry(30, 64, 40),
+          new THREE.MeshBasicMaterial({ map: backdropMap, color: 0xded1c8, side: THREE.BackSide, fog: false }),
+        );
+        dome.rotation.y = Math.PI * 0.72;
+        scene.add(dome);
+
+        const veilGeometry = new THREE.PlaneGeometry(24, 12, 48, 24);
+        const veilPositions = veilGeometry.attributes.position;
+        for (let vertex = 0; vertex < veilPositions.count; vertex += 1) {
+          const x = veilPositions.getX(vertex);
+          const y = veilPositions.getY(vertex);
+          veilPositions.setZ(vertex, Math.sin(x * 0.32) * 0.48 + Math.cos(y * 0.46) * 0.22);
+        }
+        veilPositions.needsUpdate = true;
+        veilGeometry.computeVertexNormals();
+        const backVeil = new THREE.Mesh(
+          veilGeometry,
+          new THREE.MeshPhysicalMaterial({
+            color: 0xf0b8c9,
+            transparent: true,
+            opacity: 0.075,
+            roughness: 0.28,
+            transmission: 0.35,
+            thickness: 0.2,
+            side: THREE.DoubleSide,
+            depthWrite: false,
+          }),
+        );
+        backVeil.position.set(3.5, 2.2, -8.5);
+        backVeil.rotation.y = -0.2;
+        scene.add(backVeil);
+
+        const sideVeil = backVeil.clone();
+        sideVeil.geometry = veilGeometry.clone();
+        sideVeil.material = (backVeil.material as THREE.MeshPhysicalMaterial).clone();
+        (sideVeil.material as THREE.MeshPhysicalMaterial).color.set(0xbac2ff);
+        (sideVeil.material as THREE.MeshPhysicalMaterial).opacity = 0.055;
+        sideVeil.position.set(-7.5, 0.6, 1.5);
+        sideVeil.rotation.set(0, Math.PI / 2.35, 0.08);
+        scene.add(sideVeil);
+
+        const particleCount = window.innerWidth >= 1180 ? 760 : 420;
+        const particlePositions = new Float32Array(particleCount * 3);
+        for (let index = 0; index < particleCount; index += 1) {
+          const seed = index * 12.9898;
+          particlePositions[index * 3] = Math.sin(seed) * 12 + 1.5;
+          particlePositions[index * 3 + 1] = ((index * 37) % 113) / 113 * 9 - 3;
+          particlePositions[index * 3 + 2] = Math.cos(seed * 0.73) * 12;
+        }
+        const particleGeometry = new THREE.BufferGeometry();
+        particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+        const particles = new THREE.Points(
+          particleGeometry,
+          new THREE.PointsMaterial({
+            color: 0xffe7df,
+            size: window.innerWidth >= 1180 ? 0.034 : 0.026,
+            transparent: true,
+            opacity: 0.32,
+            depthWrite: false,
+            sizeAttenuation: true,
+          }),
+        );
+        scene.add(particles);
+
+        host.dataset.ready = 'true';
+        shell.dataset.threeReady = 'true';
+        shell.style.setProperty('--hero-three-opacity', '1');
+      },
+      undefined,
+      () => {
+        host.dataset.failed = 'true';
+      },
+    );
+
+    const measureScroll = () => {
+      const top = hero.getBoundingClientRect().top + window.scrollY;
+      progressTarget = heroScrollProgress({
+        scrollY: window.scrollY,
+        sectionTop: top,
+        sectionHeight: hero.offsetHeight,
+        viewportHeight: window.innerHeight,
+      });
+    };
+
+    const resize = () => {
+      const width = Math.max(host.clientWidth, 1);
+      const height = Math.max(host.clientHeight, 1);
+      renderer.setSize(width, height, false);
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      measureScroll();
+    };
+
+    const pointerMove = (event: PointerEvent) => {
+      pointer.set(
+        (event.clientX / Math.max(window.innerWidth, 1) - 0.5) * 2,
+        (0.5 - event.clientY / Math.max(window.innerHeight, 1)) * 2,
+      );
+    };
+
+    const render = () => {
+      frame = requestAnimationFrame(render);
+      const elapsed = clock.getElapsedTime();
+      progressCurrent += (progressTarget - progressCurrent) * 0.075;
+      const orbit = sampleHeroOrbit(progressCurrent, elapsed * 0.34);
+      const opacity = heroThreeVisibility(progressCurrent);
+      host.style.opacity = opacity.toFixed(4);
+      shell.style.setProperty('--hero-three-opacity', opacity.toFixed(4));
+
+      camera.position.set(
+        sceneRoot.position.x + Math.sin(orbit.angle) * orbit.radius,
+        orbit.elevation + pointer.y * 0.11,
+        Math.cos(orbit.angle) * orbit.radius,
+      );
+      target.set(sceneRoot.position.x - 1.28 + pointer.x * 0.09, 0.55 + pointer.y * 0.06, 0);
+      camera.lookAt(target);
+      renderer.render(scene, camera);
+    };
+
+    resize();
+    measureScroll();
+    render();
+    window.addEventListener('scroll', measureScroll, { passive: true });
+    window.addEventListener('resize', resize);
+    window.addEventListener('pointermove', pointerMove, { passive: true });
+
+    return () => {
+      disposed = true;
+      cancelAnimationFrame(frame);
+      window.removeEventListener('scroll', measureScroll);
+      window.removeEventListener('resize', resize);
+      window.removeEventListener('pointermove', pointerMove);
+      shell.removeAttribute('data-three-ready');
+      shell.style.removeProperty('--hero-three-opacity');
+      scene.traverse((object) => {
+        if (!(object instanceof THREE.Mesh)) return;
+        object.geometry.dispose();
+        const materials = Array.isArray(object.material) ? object.material : [object.material];
+        materials.forEach((material) => material.dispose());
+      });
+      textures.forEach((texture) => texture.dispose());
+      environment.dispose();
+      room.dispose();
+      pmrem.dispose();
+      renderer.dispose();
+      renderer.domElement.remove();
+    };
+  }, []);
+
+  return <div ref={hostRef} className="hero-three-world" aria-hidden="true" />;
+}

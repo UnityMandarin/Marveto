@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { homeChapters, homeUltimateHref, mapHomeScrollProgress, resolveHomeQuality, sampleHomeJourney, sampleJourneyFrame, sampleSurfaceCamera, shouldUseHomeWebgl, surfaceOrbFocus, textureCrossfadeWeights } from './home-journey';
+import { homeChapters, homeUltimateHref, mapHomeScrollProgress, resolveHomeQuality, sampleHomeJourney, sampleJourneyFrame, shouldUseHomeWebgl, textureCrossfadeWeights } from './home-journey';
 import { authoredSceneOrder, authoredScenes, sceneForConcept } from './scene-registry';
 
 describe('home journey', () => {
@@ -84,31 +84,6 @@ describe('home journey', () => {
     expect(sceneForConcept('axiom')?.id).toBe('axiom');
     expect(sceneForConcept('serein')?.desktopBase).toBe('/images/forma.webp');
     expect(sceneForConcept('forma')?.desktopBase).toBe('/images/serein.webp');
-  });
-
-  it('spins to the back side before pushing into the fractured hero crystal', () => {
-    const opening = sampleSurfaceCamera(0);
-    const turn = sampleSurfaceCamera(0.5);
-    const back = sampleSurfaceCamera(0.58);
-    const closing = sampleSurfaceCamera(1);
-    expect(opening).toMatchObject({ spin: 0, push: 0, crack: 0, zoom: 1, focus: [0.5, 0.5] });
-    expect(sampleJourneyFrame(0)).toMatchObject({ copyPhase: 'hold', copyOpacity: 1 });
-    expect(turn.spin).toBeGreaterThan(0.8);
-    expect(turn.push).toBe(0);
-    expect(turn.crack).toBe(0);
-    expect(back.spin).toBe(1);
-    expect(back.push).toBe(0);
-    expect(homeChapters[0].transitionStart).toBe(0.94);
-    expect(sampleSurfaceCamera(0.9).crack).toBe(1);
-    expect(closing).toMatchObject({ spin: 1, push: 1, crack: 1 });
-    expect(closing.zoom).toBeGreaterThan(7);
-    expect(closing.focus).toEqual(surfaceOrbFocus);
-    const frames = Array.from({ length: 21 }, (_, index) => sampleSurfaceCamera(index / 20));
-    frames.slice(1).forEach((frame, index) => {
-      expect(frame.spin).toBeGreaterThanOrEqual(frames[index].spin);
-      expect(frame.zoom).toBeGreaterThanOrEqual(frames[index].zoom);
-      expect(frame.crack).toBeGreaterThanOrEqual(frames[index].crack);
-    });
   });
 
   it('keeps the authored pearl hero and crystal horizon asset mapping', () => {
