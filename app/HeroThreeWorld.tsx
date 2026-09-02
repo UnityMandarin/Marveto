@@ -249,7 +249,7 @@ export default function HeroThreeWorld() {
 
         const sphereMaterial = new THREE.MeshPhysicalMaterial({
           map: sphereMap,
-          color: 0xb0a9ad,
+          color: 0xfffbf7,
           metalness: 0.04,
           roughness: 0.08,
           transmission: 0.28,
@@ -260,8 +260,33 @@ export default function HeroThreeWorld() {
           iridescenceThicknessRange: [120, 720],
           clearcoat: 1,
           clearcoatRoughness: 0.06,
-          envMapIntensity: 1.42,
+          envMapIntensity: 1.75,
         });
+        sphereMaterial.onBeforeCompile = (shader) => {
+          shader.fragmentShader = shader.fragmentShader.replace(
+            '#include <map_fragment>',
+            `#include <map_fragment>
+            float orbLuma = dot(diffuseColor.rgb, vec3(0.2126, 0.7152, 0.0722));
+            float orbMaxChannel = max(max(diffuseColor.r, diffuseColor.g), diffuseColor.b);
+            float orbMinChannel = min(min(diffuseColor.r, diffuseColor.g), diffuseColor.b);
+            float orbChroma = orbMaxChannel - orbMinChannel;
+            float orbColorMask = smoothstep(0.035, 0.19, orbChroma);
+            vec3 orbSaturated = mix(vec3(orbLuma), diffuseColor.rgb, 1.42);
+            diffuseColor.rgb = mix(diffuseColor.rgb, orbSaturated * 0.82, orbColorMask);`,
+          );
+          shader.fragmentShader = shader.fragmentShader.replace(
+            '#include <emissivemap_fragment>',
+            `#include <emissivemap_fragment>
+            float orbWhiteLuma = dot(diffuseColor.rgb, vec3(0.2126, 0.7152, 0.0722));
+            float orbWhiteMax = max(max(diffuseColor.r, diffuseColor.g), diffuseColor.b);
+            float orbWhiteMin = min(min(diffuseColor.r, diffuseColor.g), diffuseColor.b);
+            float orbWhiteChroma = orbWhiteMax - orbWhiteMin;
+            float orbWhiteMask = smoothstep(0.42, 0.9, orbWhiteLuma)
+              * (1.0 - smoothstep(0.045, 0.15, orbWhiteChroma));
+            totalEmissiveRadiance += vec3(0.34, 0.325, 0.31) * orbWhiteMask;`,
+          );
+        };
+        sphereMaterial.customProgramCacheKey = () => 'orb-selective-color-v1';
         const sphere = new THREE.Mesh(new THREE.SphereGeometry(1.28, 96, 64), sphereMaterial);
         sphere.position.set(0.52, 2.65, -1.18);
         sphere.castShadow = true;
