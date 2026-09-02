@@ -13,11 +13,13 @@ function createDramaticPyramidGeometry(): THREE.BufferGeometry {
   // The broad +Z face meets the default hero camera first; the rear contracts into
   // a narrower, uneven footprint so every orbit angle reveals a new silhouette.
   const apex: [number, number, number] = [0.25, 1.88, 0.16];
-  const frontLeft: [number, number, number] = [-8.85, -5.25, 1.42];
-  const frontFacet: [number, number, number] = [0.55, -4.65, 1.78];
-  const frontRight: [number, number, number] = [5.05, -4.9, 1.24];
-  const rearRight: [number, number, number] = [2.4, -4.95, -3.12];
-  const rearLeft: [number, number, number] = [-2.62, -4.8, -2.14];
+  // Keep each silhouette ray intact, but carry every base corner far below the
+  // viewport so the pyramid never exposes a cutoff edge during the full orbit.
+  const frontLeft: [number, number, number] = [-14.31, -9.528, 2.176];
+  const frontFacet: [number, number, number] = [0.73, -8.568, 2.752];
+  const frontRight: [number, number, number] = [7.93, -8.968, 1.888];
+  const rearRight: [number, number, number] = [3.69, -9.048, -5.088];
+  const rearLeft: [number, number, number] = [-4.342, -8.808, -3.52];
 
   // Faces are intentionally unshared so their crisp, differing planes and UV
   // islands remain distinct. The UV spans are proportional to each face, which
