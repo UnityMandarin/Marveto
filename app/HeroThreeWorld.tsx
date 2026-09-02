@@ -160,7 +160,7 @@ export default function HeroThreeWorld() {
         source.anisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), 16);
         textures.push(source);
 
-        const rightFaceMap = textureRegion(source, renderer, { x: 970, y: 535, width: 580, height: 617 });
+        const rightFaceMap = textureRegion(source, renderer, { x: 930, y: 535, width: 620, height: 420 });
         const pyramidMap = textureRegion(source, renderer, { x: 365, y: 535, width: 1683, height: 617 });
         const sphereMap = textureRegion(source, renderer, { x: 1060, y: 70, width: 610, height: 585 });
         const crystalMap = textureRegion(source, renderer, { x: 1580, y: 245, width: 468, height: 907 });
@@ -170,12 +170,12 @@ export default function HeroThreeWorld() {
 
         const prismFaceMaterial = new THREE.MeshPhysicalMaterial({
           map: rightFaceMap,
-          color: 0xfff8ef,
-          metalness: 0.18,
-          roughness: 0.32,
-          clearcoat: 0.82,
-          clearcoatRoughness: 0.18,
-          envMapIntensity: 1.5,
+          color: 0xffffff,
+          metalness: 0.08,
+          roughness: 0.22,
+          clearcoat: 1,
+          clearcoatRoughness: 0.1,
+          envMapIntensity: 1.8,
         });
         const pyramidBase = new THREE.MeshPhysicalMaterial({ color: 0x312f3b, metalness: 0.28, roughness: 0.48 });
         const pyramid = new THREE.Mesh(
@@ -260,18 +260,6 @@ export default function HeroThreeWorld() {
           sceneRoot.add(crystal);
         });
 
-        const floorMaterial = new THREE.MeshPhysicalMaterial({
-          map: backdropMap,
-          color: 0xe5dbd2,
-          roughness: 0.62,
-          metalness: 0.03,
-          envMapIntensity: 0.65,
-        });
-        const floor = new THREE.Mesh(new THREE.PlaneGeometry(48, 48), floorMaterial);
-        floor.rotation.x = -Math.PI / 2;
-        floor.position.y = -2.08;
-        floor.receiveShadow = true;
-        scene.add(floor);
 
 
         const veilGeometry = new THREE.PlaneGeometry(24, 12, 48, 24);
