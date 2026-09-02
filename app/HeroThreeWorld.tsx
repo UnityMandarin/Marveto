@@ -369,7 +369,7 @@ export default function HeroThreeWorld() {
       if (performance.now() - lastScrollAt > 700) idleAngle += delta * 0.055;
       progressCurrent += (progressTarget - progressCurrent) * 0.075;
       const orbit = sampleHeroOrbit(progressCurrent, idleAngle);
-      const loadFramingLift = 0.27 * (1 - progressCurrent) * (1 - progressCurrent);
+      const loadFramingLift = -0.11 * (1 - progressCurrent) * (1 - progressCurrent);
       const opacity = heroThreeVisibility(progressCurrent);
       host.style.opacity = opacity.toFixed(4);
       shell.style.setProperty('--hero-three-opacity', opacity.toFixed(4));
