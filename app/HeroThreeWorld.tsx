@@ -171,13 +171,13 @@ export default function HeroThreeWorld() {
         const frontStoneMaterial = new THREE.MeshPhysicalMaterial({
           map: frontStoneMap,
           bumpMap: frontStoneMap,
-          bumpScale: 0.055,
-          color: 0xf2e3d2,
-          metalness: 0.03,
-          roughness: 0.57,
-          clearcoat: 0.2,
-          clearcoatRoughness: 0.5,
-          envMapIntensity: 0.9,
+          bumpScale: 0.11,
+          color: 0xdfcbb5,
+          metalness: 0,
+          roughness: 0.72,
+          clearcoat: 0.08,
+          clearcoatRoughness: 0.68,
+          envMapIntensity: 0.65,
         });
         const pyramidMaterial = new THREE.MeshPhysicalMaterial({
           map: pyramidMap,
