@@ -35,10 +35,10 @@ function createDramaticPyramidGeometry(): THREE.BufferGeometry {
   ]);
   const uvs = new Float32Array([
     0.5, 0.98, 0.02, 0.04, 0.98, 0.04,
-    0.48, 0.96, 0.38, 0.10, 0.60, 0.08,
-    0.75, 0.94, 0.60, 0.08, 0.91, 0.12,
-    0.23, 0.97, 0.09, 0.15, 0.34, 0.12,
-    0.81, 0.95, 0.66, 0.08, 0.95, 0.11,
+    0.5, 0.98, 0.02, 0.04, 0.98, 0.04,
+    0.5, 0.98, 0.02, 0.04, 0.98, 0.04,
+    0.5, 0.98, 0.02, 0.04, 0.98, 0.04,
+    0.5, 0.98, 0.02, 0.04, 0.98, 0.04,
 
     0, 0, 1, 0, 0.5, 1,
     0, 0, 0.5, 1, 1, 0,
@@ -48,9 +48,8 @@ function createDramaticPyramidGeometry(): THREE.BufferGeometry {
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
   geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
-  geometry.addGroup(0, 3, 0);
-  geometry.addGroup(3, 12, 1);
-  geometry.addGroup(15, 9, 2);
+  geometry.addGroup(0, 15, 0);
+  geometry.addGroup(15, 9, 1);
   geometry.computeVertexNormals();
   geometry.computeBoundingSphere();
   return geometry;
@@ -179,19 +178,10 @@ export default function HeroThreeWorld() {
           clearcoatRoughness: 0.68,
           envMapIntensity: 0.65,
         });
-        const pyramidMaterial = new THREE.MeshPhysicalMaterial({
-          map: pyramidMap,
-          color: 0xfff8ef,
-          metalness: 0.18,
-          roughness: 0.34,
-          clearcoat: 0.72,
-          clearcoatRoughness: 0.24,
-          envMapIntensity: 1.35,
-        });
         const pyramidBase = new THREE.MeshPhysicalMaterial({ color: 0x312f3b, metalness: 0.28, roughness: 0.48 });
         const pyramid = new THREE.Mesh(
           createDramaticPyramidGeometry(),
-          [frontStoneMaterial, pyramidMaterial, pyramidBase],
+          [frontStoneMaterial, pyramidBase],
         );
         pyramid.castShadow = true;
         pyramid.receiveShadow = true;
