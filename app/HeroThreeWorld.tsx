@@ -165,7 +165,8 @@ export default function HeroThreeWorld() {
         const sphereMap = textureRegion(source, renderer, { x: 1060, y: 70, width: 610, height: 585 });
         const crystalMap = textureRegion(source, renderer, { x: 1580, y: 245, width: 468, height: 907 });
         const backdropMap = textureRegion(source, renderer, { x: 0, y: 0, width: 1050, height: 1152 });
-        textures.push(rightFaceMap, pyramidMap, sphereMap, crystalMap, backdropMap);\n        scene.background = backdropMap;
+        textures.push(rightFaceMap, pyramidMap, sphereMap, crystalMap, backdropMap);
+        scene.background = backdropMap;
 
         const prismFaceMaterial = new THREE.MeshPhysicalMaterial({
           map: rightFaceMap,
