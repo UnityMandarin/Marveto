@@ -273,18 +273,22 @@ function createPortalWorld(): PortalWorld {
       Math.max(0.32, definition.radius * 0.24),
       7,
     );
+    const trees = new THREE.InstancedMesh(treeGeometry, vegetationMaterial, 5);
+    const treeTransform = new THREE.Object3D();
     for (let treeIndex = 0; treeIndex < 5; treeIndex += 1) {
       const treeAngle = treeIndex * 2.39996 + definition.seed;
       const treeDistance = definition.radius * (0.18 + (treeIndex % 3) * 0.17);
-      const tree = new THREE.Mesh(treeGeometry, vegetationMaterial);
-      tree.position.set(
+      treeTransform.position.set(
         definition.x + Math.cos(treeAngle) * treeDistance,
         -1.12 + (definition.seed % 3) * 0.035,
         definition.z + Math.sin(treeAngle) * treeDistance * 0.72,
       );
-      tree.castShadow = true;
-      root.add(tree);
+      treeTransform.updateMatrix();
+      trees.setMatrixAt(treeIndex, treeTransform.matrix);
     }
+    trees.instanceMatrix.needsUpdate = true;
+    trees.castShadow = true;
+    root.add(trees);
   });
 
   const cloudLayer = new THREE.Group();
@@ -298,22 +302,28 @@ function createPortalWorld(): PortalWorld {
     opacity: 0,
     depthWrite: false,
   });
+  const clouds = new THREE.InstancedMesh(cloudGeometry, cloudMaterial, 45);
+  const cloudTransform = new THREE.Object3D();
+  let cloudIndex = 0;
   for (let cluster = 0; cluster < 9; cluster += 1) {
     const angle = cluster * 2.39996;
     const distance = 3.3 + (cluster % 4) * 1.55;
     const centerX = Math.cos(angle) * distance;
     const centerZ = Math.sin(angle) * distance;
     for (let puff = 0; puff < 5; puff += 1) {
-      const cloud = new THREE.Mesh(cloudGeometry, cloudMaterial);
-      cloud.position.set(
+      cloudTransform.position.set(
         centerX + Math.sin(puff * 2.1 + cluster) * 0.72,
         0.35 + (cluster % 3) * 0.42 + Math.cos(puff * 1.4) * 0.18,
         centerZ + Math.cos(puff * 1.7 + cluster) * 0.56,
       );
-      cloud.scale.set(1.18 + puff * 0.11, 0.5 + (puff % 2) * 0.14, 0.86 + (cluster % 2) * 0.16);
-      cloudLayer.add(cloud);
+      cloudTransform.scale.set(1.18 + puff * 0.11, 0.5 + (puff % 2) * 0.14, 0.86 + (cluster % 2) * 0.16);
+      cloudTransform.updateMatrix();
+      clouds.setMatrixAt(cloudIndex, cloudTransform.matrix);
+      cloudIndex += 1;
     }
   }
+  clouds.instanceMatrix.needsUpdate = true;
+  cloudLayer.add(clouds);
   root.add(cloudLayer);
 
   // A short cloud tunnel sits over the orb during the push-in. Rendering these
@@ -333,21 +343,29 @@ function createPortalWorld(): PortalWorld {
     depthWrite: false,
     depthTest: false,
   });
+  const transitionClouds = new THREE.InstancedMesh(
+    transitionCloudGeometry,
+    transitionCloudMaterial,
+    28,
+  );
+  const transitionTransform = new THREE.Object3D();
   for (let puff = 0; puff < 28; puff += 1) {
-    const cloud = new THREE.Mesh(transitionCloudGeometry, transitionCloudMaterial);
     const band = Math.floor(puff / 7);
     const angle = puff * 2.39996 + band * 0.72;
     const radius = 0.48 + (puff % 4) * 0.3;
-    cloud.position.set(
+    transitionTransform.position.set(
       1.72 - band * 0.46 + Math.sin(puff * 1.17) * 0.14,
       Math.sin(angle) * radius * 0.64 + 0.08,
       Math.cos(angle) * radius,
     );
     const puffScale = 0.62 + (puff % 5) * 0.13;
-    cloud.scale.set(puffScale * 1.35, puffScale * 0.66, puffScale);
-    cloud.renderOrder = 40;
-    transitionCloudLayer.add(cloud);
+    transitionTransform.scale.set(puffScale * 1.35, puffScale * 0.66, puffScale);
+    transitionTransform.updateMatrix();
+    transitionClouds.setMatrixAt(puff, transitionTransform.matrix);
   }
+  transitionClouds.instanceMatrix.needsUpdate = true;
+  transitionClouds.renderOrder = 40;
+  transitionCloudLayer.add(transitionClouds);
   root.add(transitionCloudLayer);
 
   const worldSun = new THREE.DirectionalLight(0xffd6a5, 4.8);
@@ -387,13 +405,18 @@ export default function HeroThreeWorld() {
       return;
     }
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'low-power' });
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 0.98;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, window.innerWidth >= 1180 ? 2 : 1.35));
+    renderer.shadowMap.autoUpdate = false;
+    const updatePixelRatio = () => {
+      const pixelRatioCap = window.innerWidth >= 1180 ? 1.5 : 1.25;
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, pixelRatioCap));
+    };
+    updatePixelRatio();
     renderer.domElement.setAttribute('aria-hidden', 'true');
     renderer.domElement.setAttribute('role', 'presentation');
     host.appendChild(renderer.domElement);
@@ -464,6 +487,10 @@ export default function HeroThreeWorld() {
     let idleAngle = 0;
     let lastElapsed = 0;
     let lastScrollAt = Number.NEGATIVE_INFINITY;
+    let lastShadowProgress = Number.NEGATIVE_INFINITY;
+    let lastRenderedAt = 0;
+    let heroInView = true;
+    let needsImmediateFrame = true;
     const pointer = new THREE.Vector2();
     const textures: THREE.Texture[] = [];
     const sculptureObjects: THREE.Object3D[] = [];
@@ -591,15 +618,18 @@ export default function HeroThreeWorld() {
           shader.fragmentShader = shader.fragmentShader.replace(
             '#include <map_fragment>',
             `#include <map_fragment>
-            vec2 orbCloudUv = vMapUv * vec2(18.0, 10.0) + vec2(uOrbTime * 0.018, 0.0);
-            float orbCloudField = orbFbm(orbCloudUv);
-            float orbCloudBody = smoothstep(0.43, 0.62, orbCloudField);
-            float orbCloudDetail = smoothstep(0.5, 0.72, orbFbm(orbCloudUv * 1.85 + 3.2));
-            vec3 orbCloudShadow = vec3(0.16, 0.27, 0.42);
-            vec3 orbCloudLight = vec3(1.0, 0.985, 0.95);
-            vec3 orbCloudColor = mix(orbCloudShadow, orbCloudLight, orbCloudBody);
-            orbCloudColor += orbCloudDetail * vec3(0.11, 0.09, 0.15);
-            diffuseColor.rgb = mix(diffuseColor.rgb, orbCloudColor, uCloudMorph);
+            float orbCloudBody = 0.0;
+            if (uCloudMorph > 0.001) {
+              vec2 orbCloudUv = vMapUv * vec2(18.0, 10.0) + vec2(uOrbTime * 0.018, 0.0);
+              float orbCloudField = orbFbm(orbCloudUv);
+              orbCloudBody = smoothstep(0.43, 0.62, orbCloudField);
+              float orbCloudDetail = smoothstep(0.5, 0.72, orbFbm(orbCloudUv * 1.85 + 3.2));
+              vec3 orbCloudShadow = vec3(0.16, 0.27, 0.42);
+              vec3 orbCloudLight = vec3(1.0, 0.985, 0.95);
+              vec3 orbCloudColor = mix(orbCloudShadow, orbCloudLight, orbCloudBody);
+              orbCloudColor += orbCloudDetail * vec3(0.11, 0.09, 0.15);
+              diffuseColor.rgb = mix(diffuseColor.rgb, orbCloudColor, uCloudMorph);
+            }
             float orbLuma = dot(diffuseColor.rgb, vec3(0.2126, 0.7152, 0.0722));
             float orbMaxChannel = max(max(diffuseColor.r, diffuseColor.g), diffuseColor.b);
             float orbMinChannel = min(min(diffuseColor.r, diffuseColor.g), diffuseColor.b);
@@ -761,6 +791,8 @@ export default function HeroThreeWorld() {
         host.dataset.ready = 'true';
         shell.dataset.threeReady = 'true';
         shell.style.setProperty('--hero-three-opacity', '1');
+        lastShadowProgress = Number.NEGATIVE_INFINITY;
+        renderer.shadowMap.needsUpdate = true;
       },
       undefined,
       () => {
@@ -781,10 +813,12 @@ export default function HeroThreeWorld() {
     const resize = () => {
       const width = Math.max(host.clientWidth, 1);
       const height = Math.max(host.clientHeight, 1);
+      updatePixelRatio();
       renderer.setSize(width, height, false);
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
       measureScroll();
+      needsImmediateFrame = true;
     };
 
     const pointerMove = (event: PointerEvent) => {
@@ -808,13 +842,38 @@ export default function HeroThreeWorld() {
     const openingFog = new THREE.Color(0xd9cec4);
     const worldFog = new THREE.Color(0x8ca7b7);
 
-    const render = () => {
-      frame = requestAnimationFrame(render);
+    let renderFrame: FrameRequestCallback;
+    const scheduleRender = () => {
+      if (disposed || document.hidden || !heroInView || frame !== 0) return;
+      frame = requestAnimationFrame(renderFrame);
+    };
+    const stopRendering = () => {
+      if (frame === 0) return;
+      cancelAnimationFrame(frame);
+      frame = 0;
+    };
+
+    renderFrame = (rafTime) => {
+      frame = 0;
+      if (disposed || document.hidden || !heroInView) return;
+      const isInteracting = performance.now() - lastScrollAt < 900
+        || Math.abs(progressTarget - progressCurrent) > 0.0005;
+      const minimumFrameTime = isInteracting ? 1000 / 60 : 1000 / 30;
+      if (!needsImmediateFrame && rafTime - lastRenderedAt < minimumFrameTime - 1) {
+        scheduleRender();
+        return;
+      }
+      needsImmediateFrame = false;
+      lastRenderedAt = rafTime;
       const elapsed = clock.getElapsedTime();
       const delta = lastElapsed === 0 ? 0 : Math.min(elapsed - lastElapsed, 0.05);
       lastElapsed = elapsed;
       if (performance.now() - lastScrollAt > 700) idleAngle += delta * 0.055;
       progressCurrent += (progressTarget - progressCurrent) * 0.075;
+      if (Math.abs(progressCurrent - lastShadowProgress) > 0.0015) {
+        renderer.shadowMap.needsUpdate = true;
+        lastShadowProgress = progressCurrent;
+      }
       const portal = sampleHeroPortal(progressCurrent);
       const orbit = sampleHeroOrbit(portal.orbitProgress, idleAngle);
       const loadFramingLift = 0.73 * (1 - portal.orbitProgress) * (1 - portal.orbitProgress);
@@ -901,14 +960,37 @@ export default function HeroThreeWorld() {
       }
       camera.lookAt(target);
       renderer.render(scene, camera);
+      scheduleRender();
     };
+
+    const visibilityChange = () => {
+      if (document.hidden) {
+        stopRendering();
+        return;
+      }
+      lastElapsed = clock.getElapsedTime();
+      needsImmediateFrame = true;
+      scheduleRender();
+    };
+    const heroObserver = new IntersectionObserver(([entry]) => {
+      heroInView = entry?.isIntersecting ?? true;
+      if (!heroInView) {
+        stopRendering();
+        return;
+      }
+      lastElapsed = clock.getElapsedTime();
+      needsImmediateFrame = true;
+      scheduleRender();
+    });
 
     resize();
     measureScroll();
-    render();
+    heroObserver.observe(hero);
     window.addEventListener('scroll', scroll, { passive: true });
     window.addEventListener('resize', resize);
     window.addEventListener('pointermove', pointerMove, { passive: true });
+    document.addEventListener('visibilitychange', visibilityChange);
+    scheduleRender();
 
     return () => {
       disposed = true;
@@ -916,6 +998,8 @@ export default function HeroThreeWorld() {
       window.removeEventListener('scroll', scroll);
       window.removeEventListener('resize', resize);
       window.removeEventListener('pointermove', pointerMove);
+      document.removeEventListener('visibilitychange', visibilityChange);
+      heroObserver.disconnect();
       shell.removeAttribute('data-three-ready');
       shell.removeAttribute('data-hero-portal');
       shell.style.removeProperty('--hero-three-opacity');
