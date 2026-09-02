@@ -16,12 +16,11 @@ function smoothstep(start: number, end: number, value: number): number {
   return normalized * normalized * (3 - 2 * normalized);
 }
 
-export function sampleHeroOrbit(progress: number, idlePhase: number): HeroOrbitFrame {
+export function sampleHeroOrbit(progress: number, idleAngle: number): HeroOrbitFrame {
   const clamped = clampHeroProgress(progress);
   const eased = smoothstep(0, 1, clamped);
-  const idleAmplitude = Math.PI / 54 * (1 - smoothstep(0.08, 0.42, clamped));
   return {
-    angle: heroOrbitStart + heroOrbitSweep * eased + Math.sin(idlePhase) * idleAmplitude,
+    angle: heroOrbitStart + heroOrbitSweep * eased + idleAngle,
     radius: 9.2 - smoothstep(0.48, 1, clamped) * 0.75,
     elevation: 2.4 + Math.sin(clamped * Math.PI) * 0.32,
   };

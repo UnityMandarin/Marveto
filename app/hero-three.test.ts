@@ -9,12 +9,12 @@ describe('three-dimensional homepage hero', () => {
     expect(closing.angle - opening.angle).toBeCloseTo(heroOrbitSweep, 8);
   });
 
-  it('adds a restrained automatic idle orbit without changing the scroll endpoint', () => {
-    const centered = sampleHeroOrbit(0, 0);
-    const idle = sampleHeroOrbit(0, Math.PI / 2);
-    expect(idle.angle).toBeGreaterThan(centered.angle);
-    expect(idle.angle - centered.angle).toBeLessThan(Math.PI / 45);
-    expect(sampleHeroOrbit(1, Math.PI / 2).angle).toBeCloseTo(sampleHeroOrbit(1, 0).angle, 8);
+  it('adds a continuous automatic idle orbit without changing the 180 degree scroll span', () => {
+    const idleAngle = Math.PI / 7;
+    const opening = sampleHeroOrbit(0, idleAngle);
+    const closing = sampleHeroOrbit(1, idleAngle);
+    expect(opening.angle - sampleHeroOrbit(0, 0).angle).toBeCloseTo(idleAngle, 8);
+    expect(closing.angle - opening.angle).toBeCloseTo(heroOrbitSweep, 8);
   });
 
   it('maps the sticky hero runway onto the orbit and fades only at the handoff', () => {

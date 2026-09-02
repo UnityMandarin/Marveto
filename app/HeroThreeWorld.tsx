@@ -95,6 +95,9 @@ export default function HeroThreeWorld() {
     let frame = 0;
     let progressTarget = 0;
     let progressCurrent = 0;
+    let idleAngle = 0;
+    let lastElapsed = 0;
+    let lastScrollAt = Number.NEGATIVE_INFINITY;
     const pointer = new THREE.Vector2();
     const textures: THREE.Texture[] = [];
 
@@ -322,11 +325,19 @@ export default function HeroThreeWorld() {
       );
     };
 
+    const scroll = () => {
+      lastScrollAt = performance.now();
+      measureScroll();
+    };
+
     const render = () => {
       frame = requestAnimationFrame(render);
       const elapsed = clock.getElapsedTime();
+      const delta = lastElapsed === 0 ? 0 : Math.min(elapsed - lastElapsed, 0.05);
+      lastElapsed = elapsed;
+      if (performance.now() - lastScrollAt > 700) idleAngle += delta * 0.055;
       progressCurrent += (progressTarget - progressCurrent) * 0.075;
-      const orbit = sampleHeroOrbit(progressCurrent, elapsed * 0.34);
+      const orbit = sampleHeroOrbit(progressCurrent, idleAngle);
       const opacity = heroThreeVisibility(progressCurrent);
       host.style.opacity = opacity.toFixed(4);
       shell.style.setProperty('--hero-three-opacity', opacity.toFixed(4));
@@ -344,14 +355,14 @@ export default function HeroThreeWorld() {
     resize();
     measureScroll();
     render();
-    window.addEventListener('scroll', measureScroll, { passive: true });
+    window.addEventListener('scroll', scroll, { passive: true });
     window.addEventListener('resize', resize);
     window.addEventListener('pointermove', pointerMove, { passive: true });
 
     return () => {
       disposed = true;
       cancelAnimationFrame(frame);
-      window.removeEventListener('scroll', measureScroll);
+      window.removeEventListener('scroll', scroll);
       window.removeEventListener('resize', resize);
       window.removeEventListener('pointermove', pointerMove);
       shell.removeAttribute('data-three-ready');
