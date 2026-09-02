@@ -13,7 +13,7 @@ function createDramaticPyramidGeometry(): THREE.BufferGeometry {
   // The broad +Z face meets the default hero camera first; the rear contracts into
   // a narrower, uneven footprint so every orbit angle reveals a new silhouette.
   const apex: [number, number, number] = [0.25, 1.88, 0.16];
-  const frontLeft: [number, number, number] = [-5.6, -4.85, 1.42];
+  const frontLeft: [number, number, number] = [-8.85, -5.25, 1.42];
   const frontFacet: [number, number, number] = [0.55, -4.65, 1.78];
   const frontRight: [number, number, number] = [5.05, -4.9, 1.24];
   const rearRight: [number, number, number] = [2.4, -4.95, -3.12];
@@ -247,7 +247,7 @@ export default function HeroThreeWorld() {
 
         const sphereMaterial = new THREE.MeshPhysicalMaterial({
           map: sphereMap,
-          color: 0xfff7f1,
+          color: 0xb0a9ad,
           metalness: 0.04,
           roughness: 0.08,
           transmission: 0.28,
@@ -258,7 +258,7 @@ export default function HeroThreeWorld() {
           iridescenceThicknessRange: [120, 720],
           clearcoat: 1,
           clearcoatRoughness: 0.06,
-          envMapIntensity: 2.1,
+          envMapIntensity: 1.42,
         });
         const sphere = new THREE.Mesh(new THREE.SphereGeometry(1.28, 96, 64), sphereMaterial);
         sphere.position.set(0.52, 2.65, -1.18);
