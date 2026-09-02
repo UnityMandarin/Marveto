@@ -201,7 +201,7 @@ export default function HeroThreeWorld() {
           envMapIntensity: 2.1,
         });
         const sphere = new THREE.Mesh(new THREE.SphereGeometry(1.28, 96, 64), sphereMaterial);
-        sphere.position.set(0.52, 2.5, 1.18);
+        sphere.position.set(0.52, 2.05, 1.18);
         sphere.castShadow = true;
         sceneRoot.add(sphere);
 
