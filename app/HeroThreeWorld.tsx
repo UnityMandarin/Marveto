@@ -8,6 +8,7 @@ import { heroScrollProgress, heroThreeVisibility, sampleHeroOrbit } from './hero
 
 const sourceSize = { width: 2048, height: 1152 };
 
+
 function createDramaticPyramidGeometry(): THREE.BufferGeometry {
   // The broad +Z face meets the default hero camera first; the rear contracts into
   // a narrower, uneven footprint so every orbit angle reveals a new silhouette.
@@ -33,11 +34,11 @@ function createDramaticPyramidGeometry(): THREE.BufferGeometry {
     ...frontLeft, ...rearLeft, ...rearRight,
   ]);
   const uvs = new Float32Array([
-    0.5, 0.98, 0.02, 0.04, 0.98, 0.04,
-    0.5, 0.98, 0.02, 0.04, 0.98, 0.04,
-    0.5, 0.98, 0.02, 0.04, 0.98, 0.04,
-    0.5, 0.98, 0.02, 0.04, 0.98, 0.04,
-    0.5, 0.98, 0.02, 0.04, 0.98, 0.04,
+    0.16, 0.98, 0.02, 0.06, 0.30, 0.05,
+    0.48, 0.96, 0.38, 0.10, 0.60, 0.08,
+    0.75, 0.94, 0.60, 0.08, 0.91, 0.12,
+    0.23, 0.97, 0.09, 0.15, 0.34, 0.12,
+    0.81, 0.95, 0.66, 0.08, 0.95, 0.11,
 
     0, 0, 1, 0, 0.5, 1,
     0, 0, 0.5, 1, 1, 0,
@@ -47,8 +48,8 @@ function createDramaticPyramidGeometry(): THREE.BufferGeometry {
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
   geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
-  for (let face = 0; face < 5; face += 1) geometry.addGroup(face * 3, 3, face);
-  geometry.addGroup(15, 9, 5);
+  geometry.addGroup(0, 15, 0);
+  geometry.addGroup(15, 9, 1);
   geometry.computeVertexNormals();
   geometry.computeBoundingSphere();
   return geometry;
@@ -80,197 +81,6 @@ function textureRegion(
   return texture;
 }
 
-function skyBackgroundTexture(): THREE.CanvasTexture {
-  const canvas = document.createElement('canvas');
-  canvas.width = 2048;
-  canvas.height = 1024;
-  const context = canvas.getContext('2d');
-  if (!context) throw new Error('Unable to create sky background');
-
-  const sky = context.createLinearGradient(0, 0, 0, canvas.height);
-  sky.addColorStop(0, '#79b6e5');
-  sky.addColorStop(0.42, '#b8d9ed');
-  sky.addColorStop(0.69, '#f3ded0');
-  sky.addColorStop(1, '#d6e5ee');
-  context.fillStyle = sky;
-  context.fillRect(0, 0, canvas.width, canvas.height);
-
-  const sun = context.createRadialGradient(1540, 240, 12, 1540, 240, 420);
-  sun.addColorStop(0, 'rgba(255, 247, 211, 0.92)');
-  sun.addColorStop(0.16, 'rgba(255, 224, 178, 0.52)');
-  sun.addColorStop(1, 'rgba(255, 222, 190, 0)');
-  context.fillStyle = sun;
-  context.fillRect(1050, 0, 998, 720);
-
-  context.filter = 'blur(26px)';
-  const cloudBands = [
-    [160, 390, 470, 92], [610, 310, 340, 72], [1015, 430, 520, 105],
-    [1510, 340, 390, 78], [1880, 510, 420, 100], [470, 580, 610, 82],
-  ] as const;
-  cloudBands.forEach(([x, y, width, height], index) => {
-    const cloud = context.createRadialGradient(x, y, 8, x, y, width * 0.52);
-    cloud.addColorStop(0, `rgba(255, 255, 255, ${index % 2 === 0 ? 0.46 : 0.34})`);
-    cloud.addColorStop(0.48, 'rgba(255, 255, 255, 0.22)');
-    cloud.addColorStop(1, 'rgba(255, 255, 255, 0)');
-    context.fillStyle = cloud;
-    context.beginPath();
-    context.ellipse(x, y, width, height, -0.04 + index * 0.014, 0, Math.PI * 2);
-    context.fill();
-  });
-  context.filter = 'none';
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.generateMipmaps = true;
-  texture.needsUpdate = true;
-  return texture;
-}
-
-const facetPalettes = [
-  { wash: '#7cc7ff', accent: '#ffe0a3', line: '#174c8f' },
-  { wash: '#b39cff', accent: '#ffbfd7', line: '#34276d' },
-  { wash: '#ffc184', accent: '#fff2c4', line: '#80412f' },
-  { wash: '#80e0df', accent: '#d8f8ff', line: '#125968' },
-  { wash: '#9e8cff', accent: '#f5c8ff', line: '#3f2b78' },
-] as const;
-
-function facetGraphicTexture(
-  source: THREE.Texture,
-  renderer: THREE.WebGLRenderer,
-  face: number,
-): THREE.CanvasTexture {
-  const size = 1536;
-  const sourceBand = 617;
-  const canvas = document.createElement('canvas');
-  canvas.width = size;
-  canvas.height = size;
-  const context = canvas.getContext('2d');
-  if (!context) throw new Error('Unable to create pyramid artwork');
-
-  const sampleX = 365 + Math.round((1683 - sourceBand) * (face / 4));
-  context.drawImage(
-    source.image as CanvasImageSource,
-    sampleX,
-    535,
-    sourceBand,
-    sourceBand,
-    0,
-    0,
-    size,
-    size,
-  );
-
-  const palette = facetPalettes[face];
-  const atmosphere = context.createLinearGradient(0, 0, size, size);
-  atmosphere.addColorStop(0, palette.wash);
-  atmosphere.addColorStop(0.48, 'rgba(255, 255, 255, 0.12)');
-  atmosphere.addColorStop(1, palette.accent);
-  context.globalCompositeOperation = 'soft-light';
-  context.globalAlpha = 0.9;
-  context.fillStyle = atmosphere;
-  context.fillRect(0, 0, size, size);
-
-  const depth = context.createLinearGradient(0, 0, size, size * 0.9);
-  depth.addColorStop(0, 'rgba(255, 255, 255, 0.04)');
-  depth.addColorStop(0.55, palette.line);
-  depth.addColorStop(1, 'rgba(5, 12, 28, 0.88)');
-  context.globalCompositeOperation = 'multiply';
-  context.globalAlpha = face === 0 ? 0.34 : 0.48;
-  context.fillStyle = depth;
-  context.fillRect(0, 0, size, size);
-
-  context.globalCompositeOperation = 'screen';
-  context.globalAlpha = 0.88;
-  context.strokeStyle = palette.accent;
-  context.lineWidth = 12;
-  context.lineCap = 'round';
-  context.lineJoin = 'round';
-
-  if (face === 0) {
-    for (let ray = 0; ray < 14; ray += 1) {
-      context.beginPath();
-      context.moveTo(size * 0.08, size * 0.93);
-      context.lineTo(size * (0.18 + ray * 0.075), size * (0.02 + (ray % 3) * 0.035));
-      context.stroke();
-    }
-  } else if (face === 1) {
-    for (let ring = 0; ring < 7; ring += 1) {
-      context.beginPath();
-      context.ellipse(
-        size * 0.52,
-        size * 0.82,
-        size * (0.16 + ring * 0.085),
-        size * (0.1 + ring * 0.065),
-        -0.3,
-        Math.PI,
-        Math.PI * 2,
-      );
-      context.stroke();
-    }
-  } else if (face === 2) {
-    for (let tier = 0; tier < 8; tier += 1) {
-      const inset = size * (0.08 + tier * 0.055);
-      const y = size * (0.1 + tier * 0.1);
-      context.beginPath();
-      context.moveTo(inset, y);
-      context.lineTo(size * 0.5, y + size * 0.12);
-      context.lineTo(size - inset, y);
-      context.stroke();
-    }
-  } else if (face === 3) {
-    for (let wave = 0; wave < 8; wave += 1) {
-      const y = size * (0.12 + wave * 0.105);
-      context.beginPath();
-      context.moveTo(-size * 0.05, y);
-      context.bezierCurveTo(
-        size * 0.25,
-        y - size * 0.16,
-        size * 0.7,
-        y + size * 0.18,
-        size * 1.05,
-        y - size * 0.04,
-      );
-      context.stroke();
-    }
-  } else {
-    const nodes = [
-      [0.12, 0.72], [0.27, 0.32], [0.43, 0.57], [0.58, 0.16],
-      [0.72, 0.46], [0.87, 0.25], [0.82, 0.78], [0.51, 0.87],
-    ];
-    context.beginPath();
-    nodes.forEach(([x, y], index) => {
-      if (index === 0) context.moveTo(size * x, size * y);
-      else context.lineTo(size * x, size * y);
-    });
-    context.stroke();
-    context.fillStyle = '#ffffff';
-    nodes.forEach(([x, y], index) => {
-      context.beginPath();
-      context.arc(size * x, size * y, 9 + (index % 3) * 5, 0, Math.PI * 2);
-      context.fill();
-    });
-  }
-
-  context.globalCompositeOperation = 'overlay';
-  context.globalAlpha = 0.7;
-  context.strokeStyle = palette.line;
-  context.lineWidth = 5;
-  for (let detail = 0; detail < 9; detail += 1) {
-    const offset = 48 + detail * 72;
-    context.beginPath();
-    context.moveTo(offset, size);
-    context.lineTo(size, offset * 0.72);
-    context.stroke();
-  }
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.anisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), 16);
-  texture.generateMipmaps = true;
-  texture.needsUpdate = true;
-  return texture;
-}
-
 export default function HeroThreeWorld() {
   const hostRef = useRef<HTMLDivElement>(null);
 
@@ -289,7 +99,7 @@ export default function HeroThreeWorld() {
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 0.72;
+    renderer.toneMappingExposure = 1.08;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, window.innerWidth >= 1180 ? 2 : 1.35));
@@ -298,9 +108,7 @@ export default function HeroThreeWorld() {
     host.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
-    const skyBackground = skyBackgroundTexture();
-    scene.background = skyBackground;
-    scene.fog = new THREE.FogExp2(0xa8cce5, 0.012);
+    scene.fog = new THREE.FogExp2(0xd9cec4, 0.026);
     const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 80);
     const target = new THREE.Vector3(0.8, 0.55, 0);
     const clock = new THREE.Clock();
@@ -313,9 +121,9 @@ export default function HeroThreeWorld() {
     const environment = pmrem.fromScene(room, 0.045).texture;
     scene.environment = environment;
 
-    const hemi = new THREE.HemisphereLight(0xe7f5ff, 0x424b61, 1.8);
+    const hemi = new THREE.HemisphereLight(0xfff2e4, 0x4d4a58, 2.35);
     scene.add(hemi);
-    const key = new THREE.DirectionalLight(0xffe3bd, 4.35);
+    const key = new THREE.DirectionalLight(0xffe3bd, 5.4);
     key.position.set(-5, 9, 7);
     key.castShadow = true;
     key.shadow.mapSize.set(2048, 2048);
@@ -352,27 +160,25 @@ export default function HeroThreeWorld() {
         source.anisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), 16);
         textures.push(source);
 
-        const pyramidFaceMaps = Array.from({ length: 5 }, (_, face) => facetGraphicTexture(source, renderer, face));
+        const pyramidMap = textureRegion(source, renderer, { x: 365, y: 535, width: 1683, height: 617 });
         const sphereMap = textureRegion(source, renderer, { x: 1060, y: 70, width: 610, height: 585 });
         const crystalMap = textureRegion(source, renderer, { x: 1580, y: 245, width: 468, height: 907 });
-        textures.push(...pyramidFaceMaps, sphereMap, crystalMap);
+        const backdropMap = textureRegion(source, renderer, { x: 0, y: 0, width: 1050, height: 1152 });
+        textures.push(pyramidMap, sphereMap, crystalMap, backdropMap);
 
-        const faceEmissives = [0x17466f, 0x4b3470, 0x713d34, 0x145464, 0x44316f];
-        const pyramidMaterials = pyramidFaceMaps.map((map, face) => new THREE.MeshPhysicalMaterial({
-          map,
-          color: 0xffffff,
+        const pyramidMaterial = new THREE.MeshPhysicalMaterial({
+          map: pyramidMap,
+          color: 0xfff8ef,
           metalness: 0.18,
-          roughness: 0.28,
-          clearcoat: 0.82,
-          clearcoatRoughness: 0.2,
-          envMapIntensity: 1.48,
-          emissive: faceEmissives[face],
-          emissiveIntensity: 0.075,
-        }));
+          roughness: 0.34,
+          clearcoat: 0.72,
+          clearcoatRoughness: 0.24,
+          envMapIntensity: 1.35,
+        });
         const pyramidBase = new THREE.MeshPhysicalMaterial({ color: 0x312f3b, metalness: 0.28, roughness: 0.48 });
         const pyramid = new THREE.Mesh(
           createDramaticPyramidGeometry(),
-          [...pyramidMaterials, pyramidBase],
+          [pyramidMaterial, pyramidBase],
         );
         pyramid.castShadow = true;
         pyramid.receiveShadow = true;
@@ -395,7 +201,7 @@ export default function HeroThreeWorld() {
           envMapIntensity: 2.1,
         });
         const sphere = new THREE.Mesh(new THREE.SphereGeometry(1.28, 96, 64), sphereMaterial);
-        sphere.position.set(-0.52, 2.05, 1.18);
+        sphere.position.set(0.52, 2.05, -1.18);
         sphere.castShadow = true;
         sceneRoot.add(sphere);
 
@@ -453,18 +259,24 @@ export default function HeroThreeWorld() {
         });
 
         const floorMaterial = new THREE.MeshPhysicalMaterial({
-          color: 0xc9d8e4,
-          roughness: 0.64,
-          metalness: 0.01,
-          clearcoat: 0.16,
-          clearcoatRoughness: 0.5,
-          envMapIntensity: 0.72,
+          map: backdropMap,
+          color: 0xe5dbd2,
+          roughness: 0.62,
+          metalness: 0.03,
+          envMapIntensity: 0.65,
         });
         const floor = new THREE.Mesh(new THREE.PlaneGeometry(48, 48), floorMaterial);
         floor.rotation.x = -Math.PI / 2;
         floor.position.y = -2.08;
         floor.receiveShadow = true;
         scene.add(floor);
+
+        const dome = new THREE.Mesh(
+          new THREE.SphereGeometry(30, 64, 40),
+          new THREE.MeshBasicMaterial({ map: backdropMap, color: 0xded1c8, side: THREE.BackSide, fog: false }),
+        );
+        dome.rotation.y = Math.PI * 0.72;
+        scene.add(dome);
 
         const veilGeometry = new THREE.PlaneGeometry(24, 12, 48, 24);
         const veilPositions = veilGeometry.attributes.position;
@@ -609,7 +421,6 @@ export default function HeroThreeWorld() {
         materials.forEach((material) => material.dispose());
       });
       textures.forEach((texture) => texture.dispose());
-      skyBackground.dispose();
       environment.dispose();
       room.dispose();
       pmrem.dispose();
