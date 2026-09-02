@@ -8,6 +8,53 @@ import { heroScrollProgress, heroThreeVisibility, sampleHeroOrbit } from './hero
 
 const sourceSize = { width: 2048, height: 1152 };
 
+
+function createDramaticPyramidGeometry(): THREE.BufferGeometry {
+  // The broad +Z face meets the default hero camera first; the rear contracts into
+  // a narrower, uneven footprint so every orbit angle reveals a new silhouette.
+  const apex: [number, number, number] = [-0.18, 2.28, 0.16];
+  const frontLeft: [number, number, number] = [-4.25, -2.03, 1.42];
+  const frontFacet: [number, number, number] = [0.55, -1.93, 1.78];
+  const frontRight: [number, number, number] = [3.85, -2.04, 1.24];
+  const rearRight: [number, number, number] = [1.78, -2.12, -3.12];
+  const rearLeft: [number, number, number] = [-1.95, -2.05, -2.14];
+
+  // Faces are intentionally unshared so their crisp, differing planes and UV
+  // islands remain distinct. The UV spans are proportional to each face, which
+  // preserves the existing high-resolution surface detail without mirroring it.
+  const positions = new Float32Array([
+    ...apex, ...frontLeft, ...frontFacet,
+    ...apex, ...frontFacet, ...frontRight,
+    ...apex, ...frontRight, ...rearRight,
+    ...apex, ...rearRight, ...rearLeft,
+    ...apex, ...rearLeft, ...frontLeft,
+
+    ...frontLeft, ...frontRight, ...frontFacet,
+    ...frontLeft, ...rearRight, ...frontRight,
+    ...frontLeft, ...rearLeft, ...rearRight,
+  ]);
+  const uvs = new Float32Array([
+    0.16, 0.98, 0.02, 0.06, 0.30, 0.05,
+    0.48, 0.96, 0.38, 0.10, 0.60, 0.08,
+    0.75, 0.94, 0.60, 0.08, 0.91, 0.12,
+    0.23, 0.97, 0.09, 0.15, 0.34, 0.12,
+    0.81, 0.95, 0.66, 0.08, 0.95, 0.11,
+
+    0, 0, 1, 0, 0.5, 1,
+    0, 0, 0.5, 1, 1, 0,
+    0, 0, 1, 0.5, 0.6, 1,
+  ]);
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+  geometry.addGroup(0, 15, 0);
+  geometry.addGroup(15, 9, 1);
+  geometry.computeVertexNormals();
+  geometry.computeBoundingSphere();
+  return geometry;
+}
+
 function webglAvailable(): boolean {
   try {
     const canvas = document.createElement('canvas');
@@ -130,7 +177,7 @@ export default function HeroThreeWorld() {
         });
         const pyramidBase = new THREE.MeshPhysicalMaterial({ color: 0x312f3b, metalness: 0.28, roughness: 0.48 });
         const pyramid = new THREE.Mesh(
-          new THREE.ConeGeometry(3.35, 4.15, 4, 1, false, Math.PI / 4),
+          createDramaticPyramidGeometry(),
           [pyramidMaterial, pyramidBase],
         );
         pyramid.castShadow = true;
@@ -154,7 +201,7 @@ export default function HeroThreeWorld() {
           envMapIntensity: 2.1,
         });
         const sphere = new THREE.Mesh(new THREE.SphereGeometry(1.28, 96, 64), sphereMaterial);
-        sphere.position.y = 3.22;
+        sphere.position.set(0.52, 3.03, 0.66);
         sphere.castShadow = true;
         sceneRoot.add(sphere);
 
