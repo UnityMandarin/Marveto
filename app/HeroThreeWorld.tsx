@@ -34,7 +34,7 @@ function createDramaticPyramidGeometry(): THREE.BufferGeometry {
     ...frontLeft, ...rearLeft, ...rearRight,
   ]);
   const uvs = new Float32Array([
-    0.16, 0.98, 0.02, 0.06, 0.30, 0.05,
+    0.5, 0.98, 0.02, 0.04, 0.98, 0.04,
     0.48, 0.96, 0.38, 0.10, 0.60, 0.08,
     0.75, 0.94, 0.60, 0.08, 0.91, 0.12,
     0.23, 0.97, 0.09, 0.15, 0.34, 0.12,
@@ -48,8 +48,9 @@ function createDramaticPyramidGeometry(): THREE.BufferGeometry {
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
   geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
-  geometry.addGroup(0, 15, 0);
-  geometry.addGroup(15, 9, 1);
+  geometry.addGroup(0, 3, 0);
+  geometry.addGroup(3, 12, 1);
+  geometry.addGroup(15, 9, 2);
   geometry.computeVertexNormals();
   geometry.computeBoundingSphere();
   return geometry;
@@ -160,12 +161,24 @@ export default function HeroThreeWorld() {
         source.anisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), 16);
         textures.push(source);
 
+        const frontStoneMap = textureRegion(source, renderer, { x: 365, y: 535, width: 895, height: 617 });
         const pyramidMap = textureRegion(source, renderer, { x: 365, y: 535, width: 1683, height: 617 });
         const sphereMap = textureRegion(source, renderer, { x: 1060, y: 70, width: 610, height: 585 });
         const crystalMap = textureRegion(source, renderer, { x: 1580, y: 245, width: 468, height: 907 });
         const backdropMap = textureRegion(source, renderer, { x: 0, y: 0, width: 1050, height: 1152 });
-        textures.push(pyramidMap, sphereMap, crystalMap, backdropMap);
+        textures.push(frontStoneMap, pyramidMap, sphereMap, crystalMap, backdropMap);
 
+        const frontStoneMaterial = new THREE.MeshPhysicalMaterial({
+          map: frontStoneMap,
+          bumpMap: frontStoneMap,
+          bumpScale: 0.055,
+          color: 0xf2e3d2,
+          metalness: 0.03,
+          roughness: 0.57,
+          clearcoat: 0.2,
+          clearcoatRoughness: 0.5,
+          envMapIntensity: 0.9,
+        });
         const pyramidMaterial = new THREE.MeshPhysicalMaterial({
           map: pyramidMap,
           color: 0xfff8ef,
@@ -178,7 +191,7 @@ export default function HeroThreeWorld() {
         const pyramidBase = new THREE.MeshPhysicalMaterial({ color: 0x312f3b, metalness: 0.28, roughness: 0.48 });
         const pyramid = new THREE.Mesh(
           createDramaticPyramidGeometry(),
-          [pyramidMaterial, pyramidBase],
+          [frontStoneMaterial, pyramidMaterial, pyramidBase],
         );
         pyramid.castShadow = true;
         pyramid.receiveShadow = true;
