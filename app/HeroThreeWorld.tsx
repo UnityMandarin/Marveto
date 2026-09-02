@@ -160,28 +160,26 @@ export default function HeroThreeWorld() {
         source.anisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), 16);
         textures.push(source);
 
-        const frontStoneMap = textureRegion(source, renderer, { x: 365, y: 535, width: 895, height: 617 });
+        const rightFaceMap = textureRegion(source, renderer, { x: 970, y: 535, width: 580, height: 617 });
         const pyramidMap = textureRegion(source, renderer, { x: 365, y: 535, width: 1683, height: 617 });
         const sphereMap = textureRegion(source, renderer, { x: 1060, y: 70, width: 610, height: 585 });
         const crystalMap = textureRegion(source, renderer, { x: 1580, y: 245, width: 468, height: 907 });
         const backdropMap = textureRegion(source, renderer, { x: 0, y: 0, width: 1050, height: 1152 });
-        textures.push(frontStoneMap, pyramidMap, sphereMap, crystalMap, backdropMap);
+        textures.push(rightFaceMap, pyramidMap, sphereMap, crystalMap, backdropMap);\n        scene.background = backdropMap;
 
-        const frontStoneMaterial = new THREE.MeshPhysicalMaterial({
-          map: frontStoneMap,
-          bumpMap: frontStoneMap,
-          bumpScale: 0.11,
-          color: 0xdfcbb5,
-          metalness: 0,
-          roughness: 0.72,
-          clearcoat: 0.08,
-          clearcoatRoughness: 0.68,
-          envMapIntensity: 0.65,
+        const prismFaceMaterial = new THREE.MeshPhysicalMaterial({
+          map: rightFaceMap,
+          color: 0xfff8ef,
+          metalness: 0.18,
+          roughness: 0.32,
+          clearcoat: 0.82,
+          clearcoatRoughness: 0.18,
+          envMapIntensity: 1.5,
         });
         const pyramidBase = new THREE.MeshPhysicalMaterial({ color: 0x312f3b, metalness: 0.28, roughness: 0.48 });
         const pyramid = new THREE.Mesh(
           createDramaticPyramidGeometry(),
-          [frontStoneMaterial, pyramidBase],
+          [prismFaceMaterial, pyramidBase],
         );
         pyramid.castShadow = true;
         pyramid.receiveShadow = true;
@@ -204,7 +202,7 @@ export default function HeroThreeWorld() {
           envMapIntensity: 2.1,
         });
         const sphere = new THREE.Mesh(new THREE.SphereGeometry(1.28, 96, 64), sphereMaterial);
-        sphere.position.set(0.52, 2.05, -1.18);
+        sphere.position.set(0.52, 2.65, -1.18);
         sphere.castShadow = true;
         sceneRoot.add(sphere);
 
@@ -274,12 +272,6 @@ export default function HeroThreeWorld() {
         floor.receiveShadow = true;
         scene.add(floor);
 
-        const dome = new THREE.Mesh(
-          new THREE.SphereGeometry(30, 64, 40),
-          new THREE.MeshBasicMaterial({ map: backdropMap, color: 0xded1c8, side: THREE.BackSide, fog: false }),
-        );
-        dome.rotation.y = Math.PI * 0.72;
-        scene.add(dome);
 
         const veilGeometry = new THREE.PlaneGeometry(24, 12, 48, 24);
         const veilPositions = veilGeometry.attributes.position;
