@@ -13,11 +13,11 @@ function createDramaticPyramidGeometry(): THREE.BufferGeometry {
   // The broad +Z face meets the default hero camera first; the rear contracts into
   // a narrower, uneven footprint so every orbit angle reveals a new silhouette.
   const apex: [number, number, number] = [0.25, 1.88, 0.16];
-  const frontLeft: [number, number, number] = [-4.25, -4.85, 1.42];
+  const frontLeft: [number, number, number] = [-5.6, -4.85, 1.42];
   const frontFacet: [number, number, number] = [0.55, -4.65, 1.78];
-  const frontRight: [number, number, number] = [3.85, -4.9, 1.24];
-  const rearRight: [number, number, number] = [1.78, -4.95, -3.12];
-  const rearLeft: [number, number, number] = [-1.95, -4.8, -2.14];
+  const frontRight: [number, number, number] = [5.05, -4.9, 1.24];
+  const rearRight: [number, number, number] = [2.4, -4.95, -3.12];
+  const rearLeft: [number, number, number] = [-2.62, -4.8, -2.14];
 
   // Faces are intentionally unshared so their crisp, differing planes and UV
   // islands remain distinct. The UV spans are proportional to each face, which
@@ -369,17 +369,17 @@ export default function HeroThreeWorld() {
       if (performance.now() - lastScrollAt > 700) idleAngle += delta * 0.055;
       progressCurrent += (progressTarget - progressCurrent) * 0.075;
       const orbit = sampleHeroOrbit(progressCurrent, idleAngle);
-      const loadFramingLift = 0.96 * (1 - progressCurrent) * (1 - progressCurrent);
+      const loadFramingLift = 1.81 * (1 - progressCurrent) * (1 - progressCurrent);
       const opacity = heroThreeVisibility(progressCurrent);
       host.style.opacity = opacity.toFixed(4);
       shell.style.setProperty('--hero-three-opacity', opacity.toFixed(4));
 
       camera.position.set(
-        sceneRoot.position.x + Math.sin(orbit.angle) * orbit.radius,
+        sceneRoot.position.x + 0.64 + Math.sin(orbit.angle) * orbit.radius,
         orbit.elevation + loadFramingLift + pointer.y * 0.11,
         Math.cos(orbit.angle) * orbit.radius,
       );
-      target.set(sceneRoot.position.x - 1.28 + pointer.x * 0.09, 0.55 + loadFramingLift + pointer.y * 0.06, 0);
+      target.set(sceneRoot.position.x - 0.64 + pointer.x * 0.09, 0.55 + loadFramingLift + pointer.y * 0.06, 0);
       camera.lookAt(target);
       renderer.render(scene, camera);
     };
