@@ -121,21 +121,46 @@ export default function HeroThreeWorld() {
     const environment = pmrem.fromScene(room, 0.045).texture;
     scene.environment = environment;
 
-    const hemi = new THREE.HemisphereLight(0xfff2e4, 0x4d4a58, 2.35);
+    // A low ambient level keeps the textured faces legible while preserving the
+    // deep, cinematic separation visible in the reference.
+    const hemi = new THREE.HemisphereLight(0xffead8, 0x292737, 0.82);
     scene.add(hemi);
-    const key = new THREE.DirectionalLight(0xffe3bd, 5.4);
-    key.position.set(-5, 9, 7);
+
+    const keyTarget = new THREE.Object3D();
+    keyTarget.position.set(2.15, 0.35, 0);
+    scene.add(keyTarget);
+
+    const key = new THREE.DirectionalLight(0xffd6a8, 7.8);
+    key.position.set(-6.5, 9.5, 6.8);
+    key.target = keyTarget;
     key.castShadow = true;
     key.shadow.mapSize.set(2048, 2048);
     key.shadow.camera.near = 0.5;
-    key.shadow.camera.far = 28;
+    key.shadow.camera.far = 30;
     key.shadow.camera.left = -9;
     key.shadow.camera.right = 9;
     key.shadow.camera.top = 9;
     key.shadow.camera.bottom = -9;
+    key.shadow.bias = -0.00035;
+    key.shadow.normalBias = 0.035;
+    key.shadow.radius = 2.5;
     scene.add(key);
-    const rim = new THREE.PointLight(0x7a83ff, 14, 16, 1.8);
-    rim.position.set(5.5, 3.5, -3.5);
+
+    // A focused amber source produces the hot streak across the pyramid while
+    // its penumbra keeps the falloff natural as the scene orbits.
+    const glint = new THREE.SpotLight(0xff9f55, 42, 17, Math.PI * 0.16, 0.68, 1.8);
+    glint.position.set(5.2, 4.5, 5.2);
+    glint.target = keyTarget;
+    glint.castShadow = true;
+    glint.shadow.mapSize.set(1024, 1024);
+    glint.shadow.bias = -0.00025;
+    glint.shadow.normalBias = 0.025;
+    scene.add(glint);
+
+    // Cool backlight outlines the orb and separates the shadowed faces without
+    // lifting their black level.
+    const rim = new THREE.PointLight(0x617cff, 18, 17, 2);
+    rim.position.set(5.8, 3.8, -4.4);
     scene.add(rim);
 
     let disposed = false;
