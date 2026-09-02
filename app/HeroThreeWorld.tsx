@@ -48,8 +48,12 @@ function createDramaticPyramidGeometry(): THREE.BufferGeometry {
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
   geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
-  geometry.addGroup(0, 15, 0);
-  geometry.addGroup(15, 9, 1);
+  geometry.addGroup(0, 3, 0);
+  geometry.addGroup(3, 3, 1);
+  geometry.addGroup(6, 3, 2);
+  geometry.addGroup(9, 3, 3);
+  geometry.addGroup(12, 3, 4);
+  geometry.addGroup(15, 9, 5);
   geometry.computeVertexNormals();
   geometry.computeBoundingSphere();
   return geometry;
@@ -99,7 +103,7 @@ export default function HeroThreeWorld() {
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.08;
+    renderer.toneMappingExposure = 0.98;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, window.innerWidth >= 1180 ? 2 : 1.35));
@@ -123,15 +127,15 @@ export default function HeroThreeWorld() {
 
     // A low ambient level keeps the textured faces legible while preserving the
     // deep, cinematic separation visible in the reference.
-    const hemi = new THREE.HemisphereLight(0xffead8, 0x292737, 0.82);
+    const hemi = new THREE.HemisphereLight(0xffead8, 0x161421, 0.06);
     scene.add(hemi);
 
     const keyTarget = new THREE.Object3D();
     keyTarget.position.set(2.15, 0.35, 0);
     scene.add(keyTarget);
 
-    const key = new THREE.DirectionalLight(0xffd6a8, 7.8);
-    key.position.set(-6.5, 9.5, 6.8);
+    const key = new THREE.DirectionalLight(0xffd6a8, 22);
+    key.position.set(-9, 2.7, 1.2);
     key.target = keyTarget;
     key.castShadow = true;
     key.shadow.mapSize.set(2048, 2048);
@@ -148,9 +152,12 @@ export default function HeroThreeWorld() {
 
     // A focused amber source produces the hot streak across the pyramid while
     // its penumbra keeps the falloff natural as the scene orbits.
-    const glint = new THREE.SpotLight(0xff9f55, 42, 17, Math.PI * 0.16, 0.68, 1.8);
-    glint.position.set(5.2, 4.5, 5.2);
-    glint.target = keyTarget;
+    const glintTarget = new THREE.Object3D();
+    glintTarget.position.set(2.75, -0.3, 0.85);
+    scene.add(glintTarget);
+    const glint = new THREE.SpotLight(0xff9848, 52, 17, Math.PI * 0.085, 0.82, 1.9);
+    glint.position.set(5.8, 3.1, 4.7);
+    glint.target = glintTarget;
     glint.castShadow = true;
     glint.shadow.mapSize.set(1024, 1024);
     glint.shadow.bias = -0.00025;
@@ -159,7 +166,7 @@ export default function HeroThreeWorld() {
 
     // Cool backlight outlines the orb and separates the shadowed faces without
     // lifting their black level.
-    const rim = new THREE.PointLight(0x617cff, 18, 17, 2);
+    const rim = new THREE.PointLight(0x617cff, 7, 17, 2);
     rim.position.set(5.8, 3.8, -4.4);
     scene.add(rim);
 
@@ -200,12 +207,38 @@ export default function HeroThreeWorld() {
           roughness: 0.22,
           clearcoat: 1,
           clearcoatRoughness: 0.1,
-          envMapIntensity: 1.8,
+          envMapIntensity: 0.12,
         });
+        // Every face keeps the same full-resolution texture; small physical tint
+        // shifts reinforce the light direction so the orbit retains dramatic
+        // light, cool shadow, and warm reflection zones at every angle.
+        const coolShadowMaterial = prismFaceMaterial.clone();
+        coolShadowMaterial.color.set(0x4f587b);
+        coolShadowMaterial.metalness = 0.16;
+        coolShadowMaterial.roughness = 0.3;
+
+        const warmReflectionMaterial = prismFaceMaterial.clone();
+        warmReflectionMaterial.color.set(0xffbd8e);
+        warmReflectionMaterial.envMapIntensity = 0.22;
+
+        const deepShadowMaterial = prismFaceMaterial.clone();
+        deepShadowMaterial.color.set(0x33384d);
+        deepShadowMaterial.metalness = 0.2;
+        deepShadowMaterial.roughness = 0.34;
+
+        const pearlFaceMaterial = prismFaceMaterial.clone();
+        pearlFaceMaterial.color.set(0xe7e3f7);
         const pyramidBase = new THREE.MeshPhysicalMaterial({ color: 0x312f3b, metalness: 0.28, roughness: 0.48 });
         const pyramid = new THREE.Mesh(
           createDramaticPyramidGeometry(),
-          [prismFaceMaterial, pyramidBase],
+          [
+            prismFaceMaterial,
+            coolShadowMaterial,
+            warmReflectionMaterial,
+            deepShadowMaterial,
+            pearlFaceMaterial,
+            pyramidBase,
+          ],
         );
         pyramid.castShadow = true;
         pyramid.receiveShadow = true;
