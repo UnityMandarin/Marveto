@@ -31,6 +31,9 @@ export interface HeroCinematicFrame extends HeroPortalFrame {
   complete: boolean;
 }
 
+export type HeroCinematicDirection = -1 | 1;
+export const heroCinematicDuration = 27;
+
 export const heroOrbitStart = -Math.PI * 0.06;
 export const heroOrbitSweep = Math.PI;
 
@@ -75,7 +78,7 @@ export function sampleHeroCinematic(seconds: number): HeroCinematicFrame {
   const blackoutIn = smoothstep(21.35, 23.15, time);
   const axiomReveal = smoothstep(23.3, 26.1, time);
   const darkness = blackoutIn * (1 - smoothstep(24.2, 26.35, time));
-  const complete = time >= 27;
+  const complete = time >= heroCinematicDuration;
   const phase: HeroCinematicPhase = complete
     ? 'complete'
     : time >= 23.15
@@ -105,6 +108,15 @@ export function sampleHeroCinematic(seconds: number): HeroCinematicFrame {
     axiomReveal,
     complete,
   };
+}
+
+export function advanceHeroCinematicTime(
+  current: number,
+  delta: number,
+  direction: HeroCinematicDirection,
+): number {
+  const next = current + Math.max(0, delta) * direction;
+  return Math.min(heroCinematicDuration, Math.max(0, next));
 }
 
 export function heroScrollProgress(options: {

@@ -5,6 +5,9 @@ import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { assetPath } from './asset-path';
 import {
+  advanceHeroCinematicTime,
+  heroCinematicDuration,
+  type HeroCinematicDirection,
   heroScrollProgress,
   heroThreeVisibility,
   sampleHeroCinematic,
@@ -118,18 +121,23 @@ interface PortalWorld {
 }
 
 function createTerrainTexture(baseHex: number, accentHex: number): THREE.DataTexture {
-  const size = 256;
+  const size = 384;
   const data = new Uint8Array(size * size * 4);
   const base = new THREE.Color(baseHex);
   const accent = new THREE.Color(accentHex);
   const color = new THREE.Color();
   for (let y = 0; y < size; y += 1) {
     for (let x = 0; x < size; x += 1) {
-      const ridge = Math.sin(x * 0.071 + Math.sin(y * 0.033) * 2.1)
-        + Math.sin(y * 0.093 - x * 0.021)
-        + Math.sin((x + y) * 0.029);
+      const ridge = Math.sin(x * 0.041 + Math.sin(y * 0.019) * 2.8)
+        + Math.sin(y * 0.057 - x * 0.013)
+        + Math.sin((x + y) * 0.017);
+      const detail = Math.sin(x * 0.23 + y * 0.11)
+        + Math.cos(y * 0.31 - x * 0.17)
+        + Math.sin((x - y) * 0.47) * 0.5;
       const grain = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
-      const blend = Math.min(1, Math.max(0, 0.5 + ridge * 0.11 + (grain - Math.floor(grain)) * 0.16));
+      const blend = Math.min(1, Math.max(0,
+        0.43 + ridge * 0.12 + detail * 0.035 + (grain - Math.floor(grain)) * 0.12,
+      ));
       color.lerpColors(base, accent, blend);
       const offset = (y * size + x) * 4;
       data[offset] = Math.round(color.r * 255);
@@ -142,7 +150,8 @@ function createTerrainTexture(baseHex: number, accentHex: number): THREE.DataTex
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.wrapS = THREE.RepeatWrapping;
   texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(2.6, 2.6);
+  texture.repeat.set(1.55, 1.55);
+  texture.anisotropy = 4;
   texture.generateMipmaps = true;
   texture.needsUpdate = true;
   return texture;
@@ -150,12 +159,13 @@ function createTerrainTexture(baseHex: number, accentHex: number): THREE.DataTex
 
 function createIslandGeometry(seed: number, radius: number): THREE.ExtrudeGeometry {
   const shape = new THREE.Shape();
-  const points = 29;
+  const points = 53;
   for (let index = 0; index < points; index += 1) {
     const angle = index / points * Math.PI * 2;
     const coastline = 1
       + Math.sin(angle * 3 + seed * 1.7) * 0.18
-      + Math.cos(angle * 5 - seed * 0.8) * 0.1;
+      + Math.cos(angle * 5 - seed * 0.8) * 0.1
+      + Math.sin(angle * 9 + seed * 2.3) * 0.035;
     const x = Math.cos(angle) * radius * coastline;
     const y = Math.sin(angle) * radius * coastline * (0.7 + (seed % 3) * 0.08);
     if (index === 0) shape.moveTo(x, y);
@@ -166,7 +176,7 @@ function createIslandGeometry(seed: number, radius: number): THREE.ExtrudeGeomet
     depth: 0.42 + (seed % 4) * 0.08,
     steps: 1,
     bevelEnabled: true,
-    bevelSegments: 3,
+    bevelSegments: 4,
     bevelSize: radius * 0.07,
     bevelThickness: 0.12,
     curveSegments: 2,
@@ -264,6 +274,8 @@ function createPortalWorld(): PortalWorld {
   const islandTop = new THREE.MeshPhysicalMaterial({
     color: 0xffffff,
     map: ownedTextures[0],
+    bumpMap: ownedTextures[0],
+    bumpScale: 0.11,
     roughness: 0.78,
     clearcoat: 0.1,
     transparent: true,
@@ -272,6 +284,8 @@ function createPortalWorld(): PortalWorld {
   const islandCliff = new THREE.MeshPhysicalMaterial({
     color: 0xffffff,
     map: ownedTextures[1],
+    bumpMap: ownedTextures[1],
+    bumpScale: 0.2,
     roughness: 0.9,
     transparent: true,
     opacity: 0,
@@ -279,6 +293,8 @@ function createPortalWorld(): PortalWorld {
   const beachMaterial = new THREE.MeshPhysicalMaterial({
     color: 0xffffff,
     map: ownedTextures[2],
+    bumpMap: ownedTextures[2],
+    bumpScale: 0.065,
     roughness: 0.86,
     transparent: true,
     opacity: 0,
@@ -331,9 +347,10 @@ function createPortalWorld(): PortalWorld {
       Math.max(0.32, definition.radius * 0.24),
       7,
     );
-    const trees = new THREE.InstancedMesh(treeGeometry, vegetationMaterial, 5);
+    const treeCount = 11;
+    const trees = new THREE.InstancedMesh(treeGeometry, vegetationMaterial, treeCount);
     const treeTransform = new THREE.Object3D();
-    for (let treeIndex = 0; treeIndex < 5; treeIndex += 1) {
+    for (let treeIndex = 0; treeIndex < treeCount; treeIndex += 1) {
       const treeAngle = treeIndex * 2.39996 + definition.seed;
       const treeDistance = definition.radius * (0.18 + (treeIndex % 3) * 0.17);
       treeTransform.position.set(
@@ -341,6 +358,8 @@ function createPortalWorld(): PortalWorld {
         -1.12 + (definition.seed % 3) * 0.035,
         definition.z + Math.sin(treeAngle) * treeDistance * 0.72,
       );
+      const treeScale = 0.72 + ((treeIndex * 7 + definition.seed) % 5) * 0.11;
+      treeTransform.scale.set(treeScale, 0.82 + treeScale * 0.25, treeScale);
       treeTransform.updateMatrix();
       trees.setMatrixAt(treeIndex, treeTransform.matrix);
     }
@@ -434,7 +453,6 @@ function createPortalWorld(): PortalWorld {
     transparent: true,
     depthWrite: false,
     side: THREE.DoubleSide,
-    blending: THREE.AdditiveBlending,
     uniforms: {
       uStrength: whirlpoolStrength,
       uTime: whirlpoolTime,
@@ -450,12 +468,12 @@ function createPortalWorld(): PortalWorld {
         float radius = length(transformed.xz);
         float angle = atan(transformed.z, transformed.x);
         float pull = exp(-radius * 0.56) * uStrength;
-        float spin = pull * (2.8 + uStrength * 4.5);
+        float spin = pull * (2.2 + uStrength * 3.4);
         float cosine = cos(spin);
         float sine = sin(spin);
         transformed.xz = mat2(cosine, -sine, sine, cosine) * transformed.xz;
-        transformed.y -= pull * 2.65;
-        transformed.y += sin(radius * 8.5 - uTime * 3.8 + angle * 3.0) * 0.09 * uStrength;
+        transformed.y -= pull * 3.05;
+        transformed.y += sin(radius * 8.5 - uTime * 2.2 + angle * 3.0) * 0.055 * uStrength;
         vRadius = radius;
         vAngle = angle + spin;
         vDepth = pull;
@@ -472,16 +490,17 @@ function createPortalWorld(): PortalWorld {
       void main() {
         float disk = 1.0 - smoothstep(4.5, 5.45, vRadius);
         float core = 1.0 - smoothstep(0.18, 1.25, vRadius);
-        float ringA = pow(0.5 + 0.5 * sin(vRadius * 11.0 - uTime * 4.2 + vAngle * 4.0), 5.0);
-        float ringB = pow(0.5 + 0.5 * sin(vRadius * 18.0 - uTime * 5.8 - vAngle * 7.0), 8.0);
-        float foam = clamp(ringA * 0.72 + ringB * 0.45 + vDepth * 0.28, 0.0, 1.0);
-        vec3 deep = vec3(0.005, 0.025, 0.065);
-        vec3 cyan = vec3(0.18, 0.72, 0.9);
-        vec3 whiteWater = vec3(0.78, 0.94, 1.0);
-        vec3 color = mix(deep, cyan, smoothstep(0.0, 4.8, vRadius));
-        color = mix(color, whiteWater, foam);
-        color = mix(color, vec3(0.0), core * 0.92);
-        float alpha = disk * uStrength * (0.3 + foam * 0.64 + core * 0.4);
+        float ringA = pow(0.5 + 0.5 * sin(vRadius * 9.0 - uTime * 2.05 + vAngle * 5.0), 7.0);
+        float ringB = pow(0.5 + 0.5 * sin(vRadius * 16.0 - uTime * 2.75 + vAngle * 9.0), 10.0);
+        float brokenFoam = 0.72 + 0.28 * sin(vAngle * 13.0 + vRadius * 5.0 - uTime * 1.4);
+        float foam = clamp((ringA * 0.64 + ringB * 0.36) * brokenFoam + vDepth * 0.13, 0.0, 1.0);
+        vec3 deep = vec3(0.004, 0.018, 0.045);
+        vec3 water = vec3(0.025, 0.31, 0.44);
+        vec3 whiteWater = vec3(0.72, 0.88, 0.9);
+        vec3 color = mix(deep, water, smoothstep(0.35, 5.0, vRadius));
+        color = mix(color, whiteWater, foam * 0.74);
+        color = mix(color, vec3(0.001, 0.004, 0.012), core * 0.96);
+        float alpha = disk * uStrength * (0.34 + foam * 0.48 + core * 0.46);
         gl_FragColor = vec4(color, alpha);
       }
     `,
@@ -847,10 +866,13 @@ export default function HeroThreeWorld() {
     let sceneInView = true;
     let needsImmediateFrame = true;
     let cinematicElapsed = 0;
+    let cinematicDirection: HeroCinematicDirection = 1;
     let cinematicStarted = false;
     let cinematicComplete = false;
     let cinematicReleased = false;
     let bodyOverflowBeforeCinematic = '';
+    let lastScrollY = window.scrollY;
+    let touchStartY = 0;
     const visibleSceneSections = new Set<Element>();
     const pointer = new THREE.Vector2();
     const textures: THREE.Texture[] = [];
@@ -1165,6 +1187,9 @@ export default function HeroThreeWorld() {
     const beginCinematic = () => {
       if (cinematicStarted) return;
       cinematicStarted = true;
+      cinematicComplete = false;
+      cinematicReleased = false;
+      cinematicDirection = 1;
       cinematicElapsed = 0;
       bodyOverflowBeforeCinematic = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
@@ -1172,8 +1197,9 @@ export default function HeroThreeWorld() {
     };
 
     const releaseCinematic = () => {
-      if (cinematicReleased) return;
+      if (cinematicReleased || cinematicDirection < 0) return;
       cinematicReleased = true;
+      cinematicStarted = false;
       cinematicComplete = true;
       document.body.style.overflow = bodyOverflowBeforeCinematic;
       shell.dataset.cinematic = 'complete';
@@ -1185,6 +1211,44 @@ export default function HeroThreeWorld() {
       // to be fully present over the new underwater scene.
       const destination = axiomTop + axiomSection.offsetHeight * 0.24;
       window.scrollTo(0, destination);
+      requestAnimationFrame(() => {
+        document.documentElement.style.scrollBehavior = previousScrollBehavior;
+      });
+    };
+
+    const beginReverseCinematic = () => {
+      if (cinematicStarted || !portalWorld || !sphere || shell.dataset.chapter !== 'axiom') return;
+      cinematicStarted = true;
+      cinematicComplete = false;
+      cinematicReleased = false;
+      cinematicDirection = -1;
+      cinematicElapsed = heroCinematicDuration;
+      bodyOverflowBeforeCinematic = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      shell.dataset.cinematic = 'true';
+      host.style.opacity = '1';
+      needsImmediateFrame = true;
+      scheduleRender();
+    };
+
+    const releaseReverseCinematic = () => {
+      if (cinematicReleased || cinematicDirection > 0) return;
+      cinematicReleased = true;
+      cinematicStarted = false;
+      cinematicComplete = false;
+      cinematicElapsed = 0;
+      document.body.style.overflow = bodyOverflowBeforeCinematic;
+      shell.removeAttribute('data-cinematic');
+      shell.removeAttribute('data-cinematic-phase');
+      if (!hero) return;
+      const previousScrollBehavior = document.documentElement.style.scrollBehavior;
+      document.documentElement.style.scrollBehavior = 'auto';
+      const heroTop = hero.getBoundingClientRect().top + window.scrollY;
+      const heroRunway = Math.max(hero.offsetHeight - window.innerHeight, 1);
+      progressTarget = 0.55;
+      progressCurrent = 0.55;
+      window.scrollTo(0, heroTop + heroRunway * 0.55);
+      lastScrollY = window.scrollY;
       requestAnimationFrame(() => {
         document.documentElement.style.scrollBehavior = previousScrollBehavior;
       });
@@ -1219,8 +1283,29 @@ export default function HeroThreeWorld() {
     };
 
     const scroll = () => {
+      const nextScrollY = window.scrollY;
+      const scrollingBack = nextScrollY < lastScrollY - 3;
+      lastScrollY = nextScrollY;
+      if (scrollingBack) beginReverseCinematic();
       lastScrollAt = performance.now();
       measureScroll();
+    };
+
+    const wheel = (event: WheelEvent) => {
+      if (event.deltaY >= -4 || cinematicStarted || shell.dataset.chapter !== 'axiom') return;
+      event.preventDefault();
+      beginReverseCinematic();
+    };
+
+    const touchStart = (event: TouchEvent) => {
+      touchStartY = event.touches[0]?.clientY ?? 0;
+    };
+
+    const touchMove = (event: TouchEvent) => {
+      const currentY = event.touches[0]?.clientY ?? touchStartY;
+      if (currentY - touchStartY < 10 || cinematicStarted || shell.dataset.chapter !== 'axiom') return;
+      event.preventDefault();
+      beginReverseCinematic();
     };
 
     const orbitPosition = new THREE.Vector3();
@@ -1265,17 +1350,21 @@ export default function HeroThreeWorld() {
       const elapsed = clock.getElapsedTime();
       const delta = lastElapsed === 0 ? 0 : Math.min(elapsed - lastElapsed, 0.05);
       lastElapsed = elapsed;
-      if (!cinematicStarted && progressTarget >= 0.585 && portalWorld && sphere) beginCinematic();
-      if (cinematicStarted && !cinematicComplete) cinematicElapsed += delta;
+      if (!cinematicStarted && !cinematicComplete && progressTarget >= 0.585
+        && shell.dataset.chapter !== 'axiom' && portalWorld && sphere) beginCinematic();
+      if (cinematicStarted) {
+        cinematicElapsed = advanceHeroCinematicTime(cinematicElapsed, delta, cinematicDirection);
+      }
       if (performance.now() - lastScrollAt > 700) idleAngle += delta * 0.055;
       progressCurrent += (progressTarget - progressCurrent) * 0.075;
       const axiomChapterActive = shell.dataset.chapter === 'axiom';
       const cinematic = cinematicStarted
         ? sampleHeroCinematic(cinematicElapsed)
         : axiomChapterActive
-          ? sampleHeroCinematic(27)
+          ? sampleHeroCinematic(heroCinematicDuration)
           : null;
-      if (cinematic?.complete && !cinematicComplete) releaseCinematic();
+      if (cinematicStarted && cinematicDirection > 0 && cinematic?.complete) releaseCinematic();
+      if (cinematicStarted && cinematicDirection < 0 && cinematicElapsed <= 0) releaseReverseCinematic();
       const portal = cinematic ?? sampleHeroPortal(progressCurrent);
       const shadowProgress = cinematic
         ? cinematic.worldReveal + cinematic.whirlpool + cinematic.axiomReveal * 2
@@ -1376,7 +1465,7 @@ export default function HeroThreeWorld() {
         // Bring the vortex pattern in before the camera loses control, so the
         // viewer gets a readable whirlpool beat before the plunge.
         portalWorld.whirlpoolStrength.value = Math.pow(whirlpoolStrength, 0.45);
-        portalWorld.whirlpoolTime.value = elapsed;
+        portalWorld.whirlpoolTime.value = cinematic ? cinematicElapsed : elapsed;
         portalWorld.worldSun.intensity = 4.8 * surfaceWorldOpacity;
 
         portalWorld.axiomRoot.visible = axiomReveal > 0.001;
@@ -1400,22 +1489,30 @@ export default function HeroThreeWorld() {
         target.lerp(worldCameraTarget, portal.worldSettle);
 
         if (whirlpoolStrength > 0) {
-          const vortexAngle = elapsed * (0.75 + whirlpoolStrength * 3.9)
-            + whirlpoolStrength * Math.PI * 5.5;
-          const vortexRadius = 9.6 * Math.pow(1 - whirlpoolStrength, 1.32) + 0.18;
+          // A deterministic logarithmic descent: less than one full orbit over
+          // five seconds, no shake, and the exact same path when played back.
+          const descent = Math.pow(whirlpoolStrength, 1.08);
+          const vortexCenterX = orbCenter.x + 0.25;
+          const vortexCenterY = orbCenter.y - 1.72;
+          const vortexCenterZ = orbCenter.z + 0.3;
+          const startDx = worldCameraPosition.x - vortexCenterX;
+          const startDz = worldCameraPosition.z - vortexCenterZ;
+          const startRadius = Math.hypot(startDx, startDz);
+          const startAngle = Math.atan2(startDz, startDx);
+          const vortexAngle = startAngle + descent * Math.PI * 1.65;
+          const vortexRadius = 0.24 + (startRadius - 0.24) * Math.pow(1 - descent, 1.18);
           vortexCameraPosition.set(
-            orbCenter.x + 0.25 + Math.cos(vortexAngle) * vortexRadius,
-            orbCenter.y - 1.25 + (1 - whirlpoolStrength) * 8.1
-              + Math.sin(elapsed * 5.1) * whirlpoolStrength * 0.32,
-            orbCenter.z + 0.3 + Math.sin(vortexAngle) * vortexRadius,
+            vortexCenterX + Math.cos(vortexAngle) * vortexRadius,
+            vortexCenterY + 9.82 * Math.pow(1 - descent, 1.08) - descent * 1.12,
+            vortexCenterZ + Math.sin(vortexAngle) * vortexRadius,
           );
           vortexCameraTarget.set(
-            orbCenter.x + 0.25,
-            orbCenter.y - 1.72 - whirlpoolStrength * 1.4,
-            orbCenter.z + 0.3,
+            vortexCenterX,
+            vortexCenterY - descent * 0.42,
+            vortexCenterZ,
           );
-          camera.position.lerp(vortexCameraPosition, whirlpoolStrength);
-          target.lerp(vortexCameraTarget, whirlpoolStrength);
+          camera.position.copy(vortexCameraPosition);
+          target.lerp(vortexCameraTarget, descent);
         }
 
         if (axiomReveal > 0) {
@@ -1441,10 +1538,9 @@ export default function HeroThreeWorld() {
       }
       camera.lookAt(target);
       if ((cinematic?.whirlpool ?? 0) > 0) {
-        camera.rotateZ(
-          Math.sin(elapsed * 6.8) * cinematic!.whirlpool * 0.18
-          + cinematic!.whirlpool * cinematic!.whirlpool * 0.42,
-        );
+        const controlledBank = cinematic!.whirlpool * 0.08
+          + cinematic!.whirlpool * cinematic!.whirlpool * 0.1;
+        camera.rotateZ(-controlledBank);
       }
       renderer.render(scene, camera);
       scheduleRender();
@@ -1481,6 +1577,9 @@ export default function HeroThreeWorld() {
     sceneObserver.observe(hero);
     if (axiomSection) sceneObserver.observe(axiomSection);
     window.addEventListener('scroll', scroll, { passive: true });
+    window.addEventListener('wheel', wheel, { passive: false });
+    window.addEventListener('touchstart', touchStart, { passive: true });
+    window.addEventListener('touchmove', touchMove, { passive: false });
     window.addEventListener('resize', resize);
     window.addEventListener('pointermove', pointerMove, { passive: true });
     document.addEventListener('visibilitychange', visibilityChange);
@@ -1490,11 +1589,14 @@ export default function HeroThreeWorld() {
       disposed = true;
       cancelAnimationFrame(frame);
       window.removeEventListener('scroll', scroll);
+      window.removeEventListener('wheel', wheel);
+      window.removeEventListener('touchstart', touchStart);
+      window.removeEventListener('touchmove', touchMove);
       window.removeEventListener('resize', resize);
       window.removeEventListener('pointermove', pointerMove);
       document.removeEventListener('visibilitychange', visibilityChange);
       sceneObserver.disconnect();
-      if (cinematicStarted && !cinematicReleased) document.body.style.overflow = bodyOverflowBeforeCinematic;
+      if (cinematicStarted) document.body.style.overflow = bodyOverflowBeforeCinematic;
       shell.removeAttribute('data-three-ready');
       shell.removeAttribute('data-hero-portal');
       shell.removeAttribute('data-cinematic');

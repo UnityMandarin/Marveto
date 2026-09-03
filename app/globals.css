@@ -110,6 +110,9 @@ em { font-family: var(--font-editorial), Georgia, serif; font-weight: 500; }
 }
 .site-shell[data-cinematic='true'] main,
 .site-shell[data-cinematic='true'] .site-header { pointer-events: none; }
+.site-shell[data-cinematic='true'][data-chapter='axiom'] .project-axiom .project-copy {
+  opacity: 0 !important;
+}
 
 .site-header {
   position: fixed; z-index: 140; inset: 0 0 auto; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;

@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  advanceHeroCinematicTime,
+  heroCinematicDuration,
   heroOrbitStart,
   heroOrbitSweep,
   heroScrollProgress,
@@ -55,6 +57,13 @@ describe('three-dimensional homepage hero', () => {
     expect(sampleHeroCinematic(19).whirlpool).toBeGreaterThan(0);
     expect(sampleHeroCinematic(22).phase).toBe('blackout');
     expect(sampleHeroCinematic(25).axiomReveal).toBeGreaterThan(0);
-    expect(sampleHeroCinematic(27)).toMatchObject({ phase: 'complete', complete: true });
+    expect(sampleHeroCinematic(heroCinematicDuration)).toMatchObject({ phase: 'complete', complete: true });
+  });
+
+  it('plays the same cinematic timeline forward and backward without overshooting', () => {
+    expect(advanceHeroCinematicTime(12, 2, 1)).toBe(14);
+    expect(advanceHeroCinematicTime(12, 2, -1)).toBe(10);
+    expect(advanceHeroCinematicTime(0.5, 2, -1)).toBe(0);
+    expect(advanceHeroCinematicTime(heroCinematicDuration - 0.5, 2, 1)).toBe(heroCinematicDuration);
   });
 });
