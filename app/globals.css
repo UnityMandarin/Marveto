@@ -76,6 +76,40 @@ em { font-family: var(--font-editorial), Georgia, serif; font-weight: 500; }
 .site-shell[data-hero-portal='zoom'] .hero-copy { opacity: .12; }
 .site-shell[data-hero-portal='clouds'] .hero-copy,
 .site-shell[data-hero-portal='world'] .hero-copy { opacity: 0; }
+.site-shell[data-hero-portal='axiom'] .hero-copy { opacity: 0; }
+
+.cinematic-narrative {
+  position: fixed;
+  z-index: 150;
+  inset: 0;
+  display: grid;
+  width: min(1120px, 100%);
+  align-content: center;
+  gap: clamp(18px, 3vh, 34px);
+  padding: 90px clamp(24px, 7vw, 118px) 70px;
+  opacity: var(--cinematic-copy-opacity, 0);
+  transform: translate3d(0, calc((1 - var(--cinematic-copy-opacity, 0)) * 28px), 0);
+  color: white;
+  text-shadow: 0 2px 32px rgba(0, 15, 35, .52);
+  pointer-events: none;
+  will-change: opacity, transform;
+}
+.cinematic-narrative__kicker { margin: 0; text-transform: uppercase; letter-spacing: .18em; font-size: 8px; }
+.cinematic-narrative__lead { margin: 0; font-size: clamp(60px, 8vw, 124px); font-weight: 490; line-height: .82; letter-spacing: -.07em; }
+.cinematic-narrative__lead em { display: inline-block; margin-left: 7vw; }
+.cinematic-narrative__body { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(28px, 6vw, 86px); width: min(760px, 72vw); margin-left: auto; }
+.cinematic-narrative__body p { margin: 0; font-size: clamp(12px, 1vw, 15px); line-height: 1.65; }
+.cinematic-blackout {
+  position: fixed;
+  z-index: 190;
+  inset: 0;
+  opacity: var(--cinematic-blackout, 0);
+  background: #00040a;
+  pointer-events: none;
+  will-change: opacity;
+}
+.site-shell[data-cinematic='true'] main,
+.site-shell[data-cinematic='true'] .site-header { pointer-events: none; }
 
 .site-header {
   position: fixed; z-index: 140; inset: 0 0 auto; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
@@ -342,6 +376,10 @@ main { position: relative; z-index: 10; }
   .contact-chapter footer { grid-template-columns: 1fr 1fr; gap: 18px; right: 22px; left: 22px; }
   .footer-wordmark { font-size: 52px; }
   .fallback-plate img { object-position: center; }
+  .cinematic-narrative { width: 100%; align-content: center; padding: 84px 22px 52px; }
+  .cinematic-narrative__lead { font-size: clamp(50px, 14vw, 72px); line-height: .86; }
+  .cinematic-narrative__lead em { margin-left: 0; }
+  .cinematic-narrative__body { grid-template-columns: 1fr; gap: 18px; width: 88vw; margin-left: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {

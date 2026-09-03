@@ -206,6 +206,16 @@ export default function MarvetoExperience() {
         <HeroThreeWorld />
       </div>
 
+      <div className="cinematic-narrative" aria-hidden="true">
+        <p className="cinematic-narrative__kicker">01 · The signal</p>
+        <p className="cinematic-narrative__lead">Before the meeting,<br /><em>there is a feeling.</em></p>
+        <div className="cinematic-narrative__body">
+          <p>Your website is the first room people enter. It can flatten a company into information—or give its ambition a physical presence.</p>
+          <p>Marveto finds the signal, gives it form, and builds the world around it. Calm type. Precise movement. No borrowed personality.</p>
+        </div>
+      </div>
+      <div className="cinematic-blackout" aria-hidden="true" />
+
       <div className="route-transition" aria-hidden="true">
         {transitioning && <FallbackScene sceneId={transitioning as 'axiom' | 'serein' | 'forma'} eager />}
         <span>{transitioning ? `Entering ${transitioning}` : ''}</span>

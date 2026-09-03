@@ -177,7 +177,7 @@ export default function HomeWorld({ onReady, onFailure }: { onReady?: () => void
         stencil: false,
         antialias: false,
         dpr: quality === 'full' ? Math.min(window.devicePixelRatio || 1, 1.5) : 1,
-        powerPreference: 'high-performance',
+        powerPreference: 'low-power',
       });
     } catch {
       host.dataset.failed = 'true';

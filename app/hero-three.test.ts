@@ -4,6 +4,7 @@ import {
   heroOrbitSweep,
   heroScrollProgress,
   heroThreeVisibility,
+  sampleHeroCinematic,
   sampleHeroOrbit,
   sampleHeroPortal,
 } from './hero-three';
@@ -45,5 +46,15 @@ describe('three-dimensional homepage hero', () => {
       worldReveal: 1,
       worldSettle: 1,
     });
+  });
+
+  it('runs the locked cinematic through reading, whirlpool, and underwater Axiom', () => {
+    expect(sampleHeroCinematic(0).phase).toBe('zoom');
+    expect(sampleHeroCinematic(5)).toMatchObject({ phase: 'reading', copyOpacity: 1 });
+    expect(sampleHeroCinematic(13).copyOpacity).toBeLessThan(0.02);
+    expect(sampleHeroCinematic(19).whirlpool).toBeGreaterThan(0);
+    expect(sampleHeroCinematic(22).phase).toBe('blackout');
+    expect(sampleHeroCinematic(25).axiomReveal).toBeGreaterThan(0);
+    expect(sampleHeroCinematic(27)).toMatchObject({ phase: 'complete', complete: true });
   });
 });
