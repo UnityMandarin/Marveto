@@ -98,7 +98,9 @@ function textureRegion(
 
 interface PortalWorld {
   root: THREE.Group;
-  ocean: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshPhysicalMaterial>;
+  ocean: THREE.Mesh<THREE.PlaneGeometry, THREE.ShaderMaterial>;
+  oceanTime: { value: number };
+  oceanOpacity: { value: number };
   cloudLayer: THREE.Group;
   cloudMaterial: THREE.MeshPhysicalMaterial;
   transitionCloudLayer: THREE.Group;
@@ -191,11 +193,19 @@ function createPortalWorld(): PortalWorld {
   root.visible = false;
 
   const fades: PortalWorld['fades'] = [];
-  const ownedTextures = [
+  const ownedTextures: THREE.Texture[] = [
     createTerrainTexture(0x365b42, 0x809b62),
     createTerrainTexture(0x2b2830, 0x7b5b48),
     createTerrainTexture(0xc89f5e, 0xf2d899),
   ];
+  const whirlpoolPhoto = new THREE.TextureLoader().load(assetPath('/images/whirlpool-reference.jpg'));
+  whirlpoolPhoto.colorSpace = THREE.SRGBColorSpace;
+  whirlpoolPhoto.wrapS = THREE.ClampToEdgeWrapping;
+  whirlpoolPhoto.wrapT = THREE.ClampToEdgeWrapping;
+  whirlpoolPhoto.minFilter = THREE.LinearMipmapLinearFilter;
+  whirlpoolPhoto.magFilter = THREE.LinearFilter;
+  whirlpoolPhoto.anisotropy = 4;
+  ownedTextures.push(whirlpoolPhoto);
   const skyOpacity = { value: 0 };
   const sky = new THREE.Mesh(
     new THREE.SphereGeometry(28, 48, 24),
@@ -241,23 +251,67 @@ function createPortalWorld(): PortalWorld {
   oceanPositions.needsUpdate = true;
   oceanGeometry.computeVertexNormals();
   oceanGeometry.rotateX(-Math.PI / 2);
-  const oceanMaterial = new THREE.MeshPhysicalMaterial({
-    color: 0x176f91,
-    metalness: 0.08,
-    roughness: 0.2,
-    transmission: 0.08,
-    thickness: 0.7,
-    clearcoat: 1,
-    clearcoatRoughness: 0.08,
-    envMapIntensity: 1.5,
+  const oceanTime = { value: 0 };
+  const oceanOpacity = { value: 0 };
+  const oceanMaterial = new THREE.ShaderMaterial({
     transparent: true,
-    opacity: 0,
+    depthWrite: true,
+    uniforms: {
+      uTime: oceanTime,
+      uOpacity: oceanOpacity,
+    },
+    vertexShader: `
+      uniform float uTime;
+      varying vec3 vWorldPosition;
+      varying vec3 vSurfaceNormal;
+      varying float vWave;
+      void main() {
+        vec3 transformed = position;
+        float longWave = sin(transformed.x * 0.68 + uTime * 0.48)
+          + cos(transformed.z * 0.81 - uTime * 0.39);
+        float crossWave = sin((transformed.x + transformed.z) * 1.73 - uTime * 0.72)
+          + cos((transformed.x - transformed.z) * 2.21 + uTime * 0.57);
+        float ripple = sin(transformed.x * 4.1 + transformed.z * 2.8 + uTime * 1.15);
+        float wave = longWave * 0.055 + crossWave * 0.022 + ripple * 0.006;
+        transformed.y += wave;
+        float slopeX = cos(transformed.x * 0.68 + uTime * 0.48) * 0.037
+          + cos((transformed.x + transformed.z) * 1.73 - uTime * 0.72) * 0.038;
+        float slopeZ = -sin(transformed.z * 0.81 - uTime * 0.39) * 0.045
+          + cos((transformed.x + transformed.z) * 1.73 - uTime * 0.72) * 0.038;
+        vSurfaceNormal = normalize(normalMatrix * vec3(-slopeX, 1.0, -slopeZ));
+        vec4 world = modelMatrix * vec4(transformed, 1.0);
+        vWorldPosition = world.xyz;
+        vWave = wave;
+        gl_Position = projectionMatrix * viewMatrix * world;
+      }
+    `,
+    fragmentShader: `
+      precision highp float;
+      uniform float uOpacity;
+      uniform float uTime;
+      varying vec3 vWorldPosition;
+      varying vec3 vSurfaceNormal;
+      varying float vWave;
+      void main() {
+        vec3 viewDirection = normalize(cameraPosition - vWorldPosition);
+        float fresnel = pow(1.0 - max(dot(viewDirection, normalize(vSurfaceNormal)), 0.0), 3.2);
+        float movingDetail = sin(vWorldPosition.x * 2.8 + vWorldPosition.z * 3.7 - uTime * 0.8)
+          * sin(vWorldPosition.z * 5.2 - uTime * 0.55);
+        float sunTrack = pow(max(dot(normalize(vSurfaceNormal), normalize(vec3(-0.28, 0.9, 0.34))), 0.0), 38.0);
+        vec3 deepWater = vec3(0.008, 0.16, 0.21);
+        vec3 reflectedSky = vec3(0.24, 0.58, 0.68);
+        vec3 color = mix(deepWater, reflectedSky, 0.2 + fresnel * 0.72);
+        color += vec3(0.04, 0.12, 0.13) * movingDetail * 0.18;
+        color += vec3(0.82, 0.88, 0.82) * sunTrack * (0.18 + fresnel * 0.82);
+        color += vec3(0.02, 0.07, 0.08) * vWave;
+        gl_FragColor = vec4(color, uOpacity);
+      }
+    `,
   });
   const ocean = new THREE.Mesh(oceanGeometry, oceanMaterial);
   ocean.position.y = -1.9;
   ocean.receiveShadow = true;
   root.add(ocean);
-  fades.push({ material: oceanMaterial, opacity: 0.96 });
 
   const seabedMaterial = new THREE.MeshPhysicalMaterial({
     color: 0x0b3445,
@@ -456,6 +510,7 @@ function createPortalWorld(): PortalWorld {
     uniforms: {
       uStrength: whirlpoolStrength,
       uTime: whirlpoolTime,
+      uPhoto: { value: whirlpoolPhoto },
     },
     vertexShader: `
       uniform float uStrength;
@@ -463,6 +518,7 @@ function createPortalWorld(): PortalWorld {
       varying float vRadius;
       varying float vAngle;
       varying float vDepth;
+      varying vec2 vUv;
       void main() {
         vec3 transformed = position;
         float radius = length(transformed.xz);
@@ -477,6 +533,7 @@ function createPortalWorld(): PortalWorld {
         vRadius = radius;
         vAngle = angle + spin;
         vDepth = pull;
+        vUv = uv;
         gl_Position = projectionMatrix * modelViewMatrix * vec4(transformed, 1.0);
       }
     `,
@@ -484,23 +541,46 @@ function createPortalWorld(): PortalWorld {
       precision highp float;
       uniform float uStrength;
       uniform float uTime;
+      uniform sampler2D uPhoto;
       varying float vRadius;
       varying float vAngle;
       varying float vDepth;
+      varying vec2 vUv;
+      vec2 rotateUv(vec2 value, float angle) {
+        float cosine = cos(angle);
+        float sine = sin(angle);
+        return mat2(cosine, -sine, sine, cosine) * value;
+      }
       void main() {
         float disk = 1.0 - smoothstep(4.5, 5.45, vRadius);
         float core = 1.0 - smoothstep(0.18, 1.25, vRadius);
-        float ringA = pow(0.5 + 0.5 * sin(vRadius * 9.0 - uTime * 2.05 + vAngle * 5.0), 7.0);
-        float ringB = pow(0.5 + 0.5 * sin(vRadius * 16.0 - uTime * 2.75 + vAngle * 9.0), 10.0);
-        float brokenFoam = 0.72 + 0.28 * sin(vAngle * 13.0 + vRadius * 5.0 - uTime * 1.4);
-        float foam = clamp((ringA * 0.64 + ringB * 0.36) * brokenFoam + vDepth * 0.13, 0.0, 1.0);
-        vec3 deep = vec3(0.004, 0.018, 0.045);
-        vec3 water = vec3(0.025, 0.31, 0.44);
-        vec3 whiteWater = vec3(0.72, 0.88, 0.9);
-        vec3 color = mix(deep, water, smoothstep(0.35, 5.0, vRadius));
-        color = mix(color, whiteWater, foam * 0.74);
-        color = mix(color, vec3(0.001, 0.004, 0.012), core * 0.96);
-        float alpha = disk * uStrength * (0.34 + foam * 0.48 + core * 0.46);
+        vec2 centered = vUv - 0.5;
+        float photoRotation = -uTime * 0.035 - vDepth * 0.46;
+        vec2 photoUv = rotateUv(centered, photoRotation);
+        // Center-crop the supplied 808x576 photograph so its captured UI edge
+        // never enters the circular vortex.
+        photoUv = photoUv * vec2(0.713, 1.0) + 0.5;
+        vec3 photograph = texture2D(uPhoto, clamp(photoUv, 0.002, 0.998)).rgb;
+        float photographicFoam = smoothstep(0.58, 0.94,
+          dot(photograph, vec3(0.299, 0.587, 0.114)));
+
+        float spiralA = pow(0.5 + 0.5 * sin(vRadius * 9.0 - uTime * 1.7 + vAngle * 5.0), 8.0);
+        float spiralB = pow(0.5 + 0.5 * sin(vRadius * 15.0 - uTime * 2.25 + vAngle * 9.0), 11.0);
+        float spiralC = pow(0.5 + 0.5 * sin(vRadius * 23.0 - uTime * 2.8 + vAngle * 14.0), 15.0);
+        float spiralD = pow(0.5 + 0.5 * sin(vRadius * 34.0 - uTime * 3.35 + vAngle * 21.0), 20.0);
+        float brokenFoam = 0.66 + 0.34 * sin(vAngle * 17.0 + vRadius * 6.5 - uTime * 1.15);
+        float foam = clamp(
+          (spiralA * 0.42 + spiralB * 0.28 + spiralC * 0.2 + spiralD * 0.1) * brokenFoam
+            + photographicFoam * 0.52 + vDepth * 0.09,
+          0.0,
+          1.0
+        );
+        vec3 deep = vec3(0.002, 0.035, 0.05);
+        vec3 photographedWater = mix(photograph, vec3(0.0, 0.24, 0.29), 0.15);
+        vec3 color = mix(photographedWater, deep, core * 0.94);
+        color = mix(color, vec3(0.82, 0.94, 0.92), foam * 0.58);
+        color *= 0.82 + smoothstep(0.1, 4.8, vRadius) * 0.24;
+        float alpha = disk * uStrength * (0.68 + foam * 0.22 + core * 0.1);
         gl_FragColor = vec4(color, alpha);
       }
     `,
@@ -741,6 +821,8 @@ function createPortalWorld(): PortalWorld {
   return {
     root,
     ocean,
+    oceanTime,
+    oceanOpacity,
     cloudLayer,
     cloudMaterial,
     transitionCloudLayer,
@@ -1456,7 +1538,11 @@ export default function HeroThreeWorld() {
         const worldSky = Math.min(1, Math.max(0, (portal.worldReveal - 0.16) / 0.84));
         const cloudSky = Math.pow(transitionCloudStrength, 0.8);
         portalWorld.skyOpacity.value = Math.max(worldSky, cloudSky) * surfaceWorldOpacity;
-        portalWorld.ocean.position.y = -1.9 + Math.sin(elapsed * 0.42) * 0.022;
+        const environmentalTime = cinematic ? cinematicElapsed : elapsed;
+        portalWorld.oceanTime.value = environmentalTime;
+        portalWorld.oceanOpacity.value = 0.96 * portal.worldReveal * surfaceWorldOpacity;
+        portalWorld.ocean.material.depthWrite = surfaceWorldOpacity > 0.55;
+        portalWorld.ocean.position.y = -1.9 + Math.sin(environmentalTime * 0.42) * 0.022;
         portalWorld.cloudLayer.position.x = Math.sin(elapsed * 0.08) * 0.42;
         portalWorld.cloudLayer.position.z = Math.cos(elapsed * 0.065) * 0.3;
         portalWorld.transitionCloudLayer.rotation.x = elapsed * 0.012;
