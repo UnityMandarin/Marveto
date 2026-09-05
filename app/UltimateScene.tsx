@@ -129,7 +129,6 @@ export default function UltimateScene({
     let paused = document.hidden;
     let frame = 0;
     let progressTarget = 0;
-    let progressCurrent = 0;
     let stops = journey.chapters.map((_, index) => index / (journey.chapters.length - 1));
     const travel = journey.chapters.map((item) => item.travel);
     const pointerState = { x: 0, y: 0, targetX: 0, targetY: 0 };
@@ -141,16 +140,12 @@ export default function UltimateScene({
     const render = () => {
       frame = 0;
       if (!ready || paused || destroyed) return;
-      progressCurrent += (progressTarget - progressCurrent) * 0.16;
-      pointerState.x += (pointerState.targetX - pointerState.x) * 0.18;
-      pointerState.y += (pointerState.targetY - pointerState.y) * 0.18;
-      progress.value = progressCurrent;
+      // Direct input sampling: stop at rest and reverse without temporal drift.
+      pointerState.x = pointerState.targetX;
+      pointerState.y = pointerState.targetY;
+      progress.value = progressTarget;
       pointer.value = [pointerState.x, pointerState.y];
       renderer.render({ scene, clear: true, sort: false, frustumCull: false });
-      const moving = Math.abs(progressTarget - progressCurrent) > 0.00008
-        || Math.abs(pointerState.targetX - pointerState.x) > 0.0008
-        || Math.abs(pointerState.targetY - pointerState.y) > 0.0008;
-      if (moving) requestRender();
     };
 
     const updateScroll = () => {
@@ -194,7 +189,6 @@ export default function UltimateScene({
       texture.image = imageElement;
       program.uniforms.uImage.value = [imageElement.naturalWidth, imageElement.naturalHeight];
       ready = true;
-      progressCurrent = progressTarget;
       host.dataset.ready = 'true';
       shell.dataset.ultimateReady = 'true';
       requestRender();

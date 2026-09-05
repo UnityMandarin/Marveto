@@ -1405,7 +1405,6 @@ export default function HeroThreeWorld() {
     const worldFog = new THREE.Color(0x8ca7b7);
     const axiomFog = new THREE.Color(0x03152d);
 
-    let renderFrame: FrameRequestCallback;
     const scheduleRender = () => {
       if (disposed || document.hidden || !sceneInView || frame !== 0) return;
       frame = requestAnimationFrame(renderFrame);
@@ -1416,7 +1415,7 @@ export default function HeroThreeWorld() {
       frame = 0;
     };
 
-    renderFrame = (rafTime) => {
+    const renderFrame: FrameRequestCallback = (rafTime) => {
       frame = 0;
       if (disposed || document.hidden || !sceneInView) return;
       const isInteracting = (cinematicStarted && !cinematicComplete)
