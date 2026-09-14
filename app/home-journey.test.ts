@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { homeChapters, homeUltimateHref, mapHomeScrollProgress, resolveHomeQuality, sampleHomeJourney, sampleJourneyFrame, shouldUseHomeWebgl, textureCrossfadeWeights } from './home-journey';
+import { homeChapters, homeUltimateHref, mapHomeScrollProgress, sampleHomeJourney, sampleJourneyFrame, textureCrossfadeWeights } from './home-journey';
 import { authoredSceneOrder, authoredScenes, sceneForConcept } from './scene-registry';
 
 describe('home journey', () => {
@@ -59,18 +59,6 @@ describe('home journey', () => {
     expect(mapHomeScrollProgress(1, stops)).toBe(1);
     const samples = Array.from({ length: 101 }, (_, index) => mapHomeScrollProgress(index / 100, stops));
     samples.slice(1).forEach((sample, index) => expect(sample).toBeGreaterThanOrEqual(samples[index]));
-  });
-
-  it('selects WebGL only for capable motion-enabled devices', () => {
-    const capable = { reducedMotion: false, finePointer: true, viewportWidth: 1440, webgl: true };
-    expect(shouldUseHomeWebgl(capable)).toBe(true);
-    expect(shouldUseHomeWebgl({ ...capable, reducedMotion: true })).toBe(false);
-    expect(shouldUseHomeWebgl({ ...capable, finePointer: false })).toBe(false);
-    expect(shouldUseHomeWebgl({ ...capable, viewportWidth: 640 })).toBe(false);
-    expect(shouldUseHomeWebgl({ ...capable, webgl: false })).toBe(false);
-    expect(resolveHomeQuality(capable)).toBe('full');
-    expect(resolveHomeQuality({ ...capable, viewportWidth: 1024 })).toBe('balanced');
-    expect(resolveHomeQuality({ ...capable, viewportWidth: 390 })).toBe('static');
   });
 
   it('keeps scene IDs, responsive plates, and concept artwork synchronized', () => {

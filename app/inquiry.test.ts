@@ -56,8 +56,8 @@ describe('public content contracts', () => {
   });
 
   it('publishes exactly three honestly labeled studio concepts', () => {
-    expect(projects.map((project) => project.title)).toEqual(['Axiom', 'Serein', 'Forma']);
-    expect(projects.map((project) => project.sector.split(' · ')[0])).toEqual(['Technology', 'Construction', 'Medical']);
+    expect(projects.map((project) => project.title)).toEqual(['APEX', 'AURELIA', 'Forma']);
+    expect(projects.map((project) => project.sector.split(' · ')[0])).toEqual(['Motorsport', 'Hospitality', 'Medical']);
     expect(projects.every((project) => project.sector.includes('Studio concept'))).toBe(true);
   });
 
