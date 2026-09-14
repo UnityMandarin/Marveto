@@ -3,6 +3,7 @@
 import { FormEvent, MouseEvent, useEffect, useRef, useState } from 'react';
 import { assetPath, sitePath } from './asset-path';
 import ScrollVideoWorld from './ScrollVideoWorld';
+import { useSmoothWheel } from './useSmoothWheel';
 import { homeChapters, homeUltimateHref, mapHomeScrollProgress, sampleHomeJourney, sampleJourneyFrame } from './home-journey';
 import { applyPackageSelection, buildMailto, formatInquiry, Inquiry, InquiryErrors, validateInquiry } from './inquiry';
 import { authoredSceneOrder, authoredScenes, AuthoredSceneId } from './scene-registry';
@@ -25,6 +26,7 @@ function FallbackScene({ sceneId, eager = false }: { sceneId: AuthoredSceneId; e
 }
 
 export default function MarvetoExperience() {
+  useSmoothWheel();
   const root = useRef<HTMLDivElement>(null);
   const automaticBrief = useRef('');
   const [menuOpen, setMenuOpen] = useState(false);
@@ -63,8 +65,13 @@ export default function MarvetoExperience() {
     const cursor = root.current?.querySelector<HTMLElement>('.cursor');
     const cursorLabel = cursor?.querySelector<HTMLElement>('span');
     let sectionStops = homeChapters.map((_, index) => index / homeChapters.length);
+    const sections = homeChapters.map((chapter) => root.current?.querySelector<HTMLElement>(`[data-home-chapter="${chapter.id}"]`));
+    let geometry: Array<{ top: number; distance: number }> = [];
+    let maximum = 1;
+    let scrollFrame = 0;
     const measure = () => {
-      const maximum = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
+      maximum = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
+      geometry = sections.map((section) => ({ top: section ? section.getBoundingClientRect().top + window.scrollY : 0, distance: Math.max((section?.offsetHeight ?? 0) - window.innerHeight, 1) }));
       sectionStops = homeChapters.map((chapter, index) => {
         const section = root.current?.querySelector<HTMLElement>(`[data-home-chapter="${chapter.id}"]`);
         if (!section) return index / homeChapters.length;
@@ -73,7 +80,7 @@ export default function MarvetoExperience() {
       });
     };
     const updateScroll = () => {
-      const maximum = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
+      scrollFrame = 0;
       const pageProgress = Math.min(1, Math.max(0, window.scrollY / maximum));
       const progress = mapHomeScrollProgress(pageProgress, sectionStops);
       if (progressBar) progressBar.style.transform = `scaleX(${progress})`;
@@ -86,14 +93,14 @@ export default function MarvetoExperience() {
       const active = homeChapters[physicalChapter] ?? sampleHomeJourney(progress).chapter;
       root.current.dataset.chapter = active.id;
       homeChapters.forEach((item, index) => {
-        const section = root.current?.querySelector<HTMLElement>(`[data-home-chapter="${item.id}"]`);
+        const section = sections[index];
         if (!section) return;
         const physicalStart = sectionStops[index];
         const physicalEnd = index === sectionStops.length - 1 ? 1 : Math.max(sectionStops[index + 1], physicalStart + 0.0001);
         const local = Math.min(1, Math.max(0, (pageProgress - physicalStart) / Math.max(physicalEnd - physicalStart, 0.0001)));
         const frame = sampleJourneyFrame(item.start + local * (item.end - item.start));
-        const sectionTop = section.getBoundingClientRect().top + window.scrollY;
-        const stickyDistance = Math.max(section.offsetHeight - window.innerHeight, 1);
+        const sectionTop = geometry[index].top;
+        const stickyDistance = geometry[index].distance;
         const stickyLocal = Math.min(1, Math.max(0, (window.scrollY - sectionTop) / stickyDistance));
         section.style.setProperty('--section-progress', local.toFixed(4));
         section.style.setProperty('--section-copy-opacity', item.id === 'services' ? '1' : frame.copyOpacity.toFixed(4));
@@ -113,11 +120,13 @@ export default function MarvetoExperience() {
     };
     measure();
     updateScroll();
-    window.addEventListener('scroll', updateScroll, { passive: true });
+    const scheduleScroll = () => { if (!scrollFrame) scrollFrame = window.requestAnimationFrame(updateScroll); };
+    window.addEventListener('scroll', scheduleScroll, { passive: true });
     window.addEventListener('resize', measure);
     window.addEventListener('pointermove', updateCursor, { passive: true });
     return () => {
-      window.removeEventListener('scroll', updateScroll);
+      window.removeEventListener('scroll', scheduleScroll);
+      window.cancelAnimationFrame(scrollFrame);
       window.removeEventListener('resize', measure);
       window.removeEventListener('pointermove', updateCursor);
     };

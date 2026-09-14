@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 import { assetPath } from './asset-path';
 
 function seek(video: HTMLVideoElement | null, progress: number) {
-  if (!video || !Number.isFinite(video.duration) || video.duration <= 0) return;
+  if (!video || video.seeking || !Number.isFinite(video.duration) || video.duration <= 0) return;
   const nextTime = Math.min(video.duration - 0.04, Math.max(0, progress) * video.duration);
   if (Math.abs(video.currentTime - nextTime) > 0.025) video.currentTime = nextTime;
 }
@@ -28,11 +28,12 @@ export default function ScrollVideoWorld() {
     let raceStart = 0;
     let raceEnd = 1;
     let scheduled = false;
+    let frameId = 0;
 
     const measure = () => {
-      architectureStart = hero.offsetTop;
-      architectureEnd = Math.max(architectureStart + 1, signal.offsetTop + signal.offsetHeight - window.innerHeight);
-      raceStart = raceChapter.offsetTop;
+      architectureStart = hero.getBoundingClientRect().top + window.scrollY;
+      architectureEnd = Math.max(architectureStart + 1, signal.getBoundingClientRect().top + window.scrollY + signal.offsetHeight - window.innerHeight);
+      raceStart = raceChapter.getBoundingClientRect().top + window.scrollY;
       raceEnd = Math.max(raceStart + 1, raceStart + raceChapter.offsetHeight - window.innerHeight);
     };
     const update = () => {
@@ -44,12 +45,17 @@ export default function ScrollVideoWorld() {
       const flashWindow = Math.max(window.innerHeight * 0.24, 180);
       const flashDistance = Math.abs(y - raceStart);
       const flash = flashDistance >= flashWindow ? 0 : Math.pow(1 - flashDistance / flashWindow, 2);
-      shell.style.setProperty('--beam-flash', flash.toFixed(4));
+      const blend = Math.min(1, Math.max(0, (y - raceStart + flashWindow) / (flashWindow * 2)));
+      const eased = blend * blend * (3 - 2 * blend);
+      const exit = Math.min(1, Math.max(0, (y - raceEnd) / window.innerHeight));
+      shell.style.setProperty('--film-blend', String(eased));
+      shell.style.setProperty('--film-opacity', String(1 - exit * exit * (3 - 2 * exit)));
+      shell.style.setProperty('--beam-flash', window.matchMedia('(prefers-reduced-motion: reduce)').matches ? '0' : (flash * .7).toFixed(4));
     };
     const schedule = () => {
       if (scheduled) return;
       scheduled = true;
-      window.requestAnimationFrame(update);
+      frameId = window.requestAnimationFrame(update);
     };
     const refresh = () => { measure(); schedule(); };
 
@@ -57,11 +63,16 @@ export default function ScrollVideoWorld() {
     update();
     architectureVideo?.addEventListener('loadedmetadata', schedule);
     raceVideo?.addEventListener('loadedmetadata', schedule);
+    architectureVideo?.addEventListener('seeked', schedule);
+    raceVideo?.addEventListener('seeked', schedule);
     window.addEventListener('scroll', schedule, { passive: true });
     window.addEventListener('resize', refresh);
     return () => {
       architectureVideo?.removeEventListener('loadedmetadata', schedule);
       raceVideo?.removeEventListener('loadedmetadata', schedule);
+      architectureVideo?.removeEventListener('seeked', schedule);
+      raceVideo?.removeEventListener('seeked', schedule);
+      window.cancelAnimationFrame(frameId);
       window.removeEventListener('scroll', schedule);
       window.removeEventListener('resize', refresh);
       shell.style.removeProperty('--beam-flash');
@@ -97,9 +108,11 @@ export function RaceScrollVideo() {
     };
     update();
     raceVideo?.addEventListener('loadedmetadata', schedule);
+    raceVideo?.addEventListener('seeked', schedule);
     window.addEventListener('scroll', schedule, { passive: true });
     return () => {
       raceVideo?.removeEventListener('loadedmetadata', schedule);
+      raceVideo?.removeEventListener('seeked', schedule);
       window.removeEventListener('scroll', schedule);
     };
   }, []);

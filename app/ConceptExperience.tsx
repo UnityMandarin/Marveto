@@ -6,6 +6,7 @@ import { Concept, ExperienceTier, tierDefinitions, tierOrder } from './concept-d
 import { parseExperienceTier, withExperienceTier } from './concept-tier';
 import { sceneForConcept } from './scene-registry';
 import { RaceScrollVideo } from './ScrollVideoWorld';
+import { useSmoothWheel } from './useSmoothWheel';
 
 function ConceptPicture({ concept, eager = false }: { concept: Concept; eager?: boolean }) {
   const scene = sceneForConcept(concept.slug);
@@ -26,6 +27,7 @@ function ConceptPicture({ concept, eager = false }: { concept: Concept; eager?: 
 }
 
 export default function ConceptExperience({ concept }: { concept: Concept }) {
+  useSmoothWheel();
   const root = useRef<HTMLDivElement>(null);
   const preservedScroll = useRef<number | null>(null);
   const [tier, setTier] = useState<ExperienceTier>('premium');

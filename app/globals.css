@@ -65,11 +65,10 @@ em { font-family: var(--font-editorial), Georgia, serif; font-weight: 500; }
 .site-shell[data-chapter='pricing'] .plate-pricing,
 .site-shell[data-chapter='contact'] .plate-contact { opacity: 1; transform: scale(1); }
 .site-shell:not([data-chapter='surface']) .plate-surface { opacity: 0; transform: scale(1.05); }
-.scroll-video-world { z-index: 4; overflow: hidden; background: #08090b; }
+.scroll-video-world { z-index: 4; overflow: hidden; background: #08090b; opacity: var(--film-opacity, 1); }
 .scroll-film { object-fit: cover; opacity: 0; filter: saturate(.88) contrast(1.08); transition: opacity .34s linear; }
-.site-shell[data-chapter='surface'] .scroll-film--architecture,
-.site-shell[data-chapter='signal'] .scroll-film--architecture,
-.site-shell[data-chapter='axiom'] .scroll-film--race { opacity: 1; }
+.site-shell .scroll-film--architecture { opacity: calc(1 - var(--film-blend, 0)); transition: none; }
+.site-shell .scroll-film--race { opacity: var(--film-blend, 0); transition: none; }
 .scroll-film__grade { position: absolute; z-index: 2; inset: 0; background: radial-gradient(circle at 72% 42%, transparent 15%, rgba(3,5,8,.15) 58%, rgba(3,5,8,.58)), linear-gradient(90deg, rgba(3,5,8,.56), transparent 54%); }
 .scroll-video-world::after { content: ''; position: absolute; z-index: 3; inset: 0; opacity: .2; background: var(--noise-image) repeat; mix-blend-mode: soft-light; }
 .beam-transition { position: absolute; z-index: 8; inset: 0; overflow: hidden; opacity: var(--beam-flash, 0); }
@@ -154,6 +153,7 @@ main { position: relative; z-index: 10; }
 .hero-chapter { height: 360svh; }
 .signal-chapter { height: 150svh; }
 .project-chapter { height: 142svh; }
+.project-axiom { height: 340svh; }
 .services-chapter { height: 390svh; }
 .studio-chapter { height: 350svh; }
 .pricing-chapter { height: 200svh; }
