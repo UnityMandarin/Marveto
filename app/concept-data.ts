@@ -27,7 +27,7 @@ export interface TierDefinition {
   shortLabel: string;
   description: string;
   capabilities: string[];
-  motionLevel: 'light' | 'cinematic' | 'immersive-3d';
+  motionLevel: 'light' | 'cinematic';
 }
 
 export interface ConceptModule {
@@ -47,7 +47,7 @@ export interface ConceptStep {
 export interface Concept {
   slug: 'axiom' | 'serein' | 'forma';
   name: string;
-  industry: 'Technology' | 'Construction' | 'Medical';
+  industry: 'Motorsport' | 'Construction' | 'Medical';
   descriptor: string;
   headline: string;
   headlineAccent: string;
@@ -90,31 +90,31 @@ export const tierDefinitions: Record<ExperienceTier, TierDefinition> = {
     id: 'ultimate',
     label: 'Ultimate',
     shortLabel: 'Background journey',
-    description: 'A flagship digital experience where the original artwork opens into a continuous, real-time spatial journey.',
-    capabilities: ['Everything in Premium', 'Authored layered environment', 'Scroll-controlled spatial depth', 'Adaptive cinematic rendering'],
-    motionLevel: 'immersive-3d',
+    description: 'A flagship digital experience where cinematic footage becomes a continuous, scroll-controlled journey.',
+    capabilities: ['Everything in Premium', 'Scroll-scrubbed film', 'Layered 2.5D depth', 'Adaptive cinematic pacing'],
+    motionLevel: 'cinematic',
   },
 };
 
 export const concepts: Concept[] = [
   {
     slug: 'axiom',
-    name: 'Axiom',
-    industry: 'Technology',
-    descriptor: 'Systems intelligence for complex operations',
-    headline: 'Infrastructure,',
-    headlineAccent: 'made intelligible.',
-    summary: 'A calm operating layer for teams that need to understand complex systems, connect their tools, and make the next decision with context.',
-    primaryAction: 'Explore the system',
-    secondaryAction: 'See the operating model',
-    statement: 'Complexity belongs behind the interface—not in front of the people making decisions.',
-    note: 'A self-initiated Marveto studio concept. Axiom is a fictional technology company created to demonstrate our approach.',
-    image: '/images/axiom',
-    imageAlt: 'A dark cobalt gallery filled with suspended glass nodes and an illuminated portal.',
-    accent: '#5472ff',
-    glow: '#cbd6ff',
-    ink: '#050a1e',
-    paper: '#e9edff',
+    name: 'APEX',
+    industry: 'Motorsport',
+    descriptor: 'Competition engineering at full velocity',
+    headline: 'Engineered to',
+    headlineAccent: 'break away.',
+    summary: 'A race program presented at racing speed: aerodynamic intent, telemetry, and raw performance shaped into one precise digital machine.',
+    primaryAction: 'Enter the cockpit',
+    secondaryAction: 'Read the telemetry',
+    statement: 'Speed is not decoration. It is the result of every surface, system, and decision working as one.',
+    note: 'A self-initiated Marveto studio concept. APEX is a fictional racing marque created to demonstrate our approach.',
+    image: '/videos/race-car',
+    imageAlt: 'A race car accelerating through a cinematic environment.',
+    accent: '#ff3d18',
+    glow: '#ffd2c7',
+    ink: '#080808',
+    paper: '#f2eee8',
     ultimateJourney: {
       mode: 'signal',
       fog: '#040817',
@@ -133,30 +133,30 @@ export const concepts: Concept[] = [
       {
         index: '01',
         eyebrow: 'Observe',
-        title: 'See the whole system.',
-        description: 'Bring the important signals into one composed view so teams can understand what changed and where attention is needed.',
-        details: ['System overview', 'Connected signals', 'Role-aware views'],
+        title: 'Read the car at a glance.',
+        description: 'Shape live performance into a decisive visual hierarchy for drivers, engineers, and partners.',
+        details: ['Lap delta', 'Aero balance', 'Tyre state'],
       },
       {
         index: '02',
         eyebrow: 'Connect',
-        title: 'Work with the tools already in place.',
-        description: 'A clear integration story makes the product easier to evaluate without burying visitors in technical language.',
-        details: ['Integration map', 'Data pathways', 'Implementation guidance'],
+        title: 'Make engineering visible.',
+        description: 'Turn invisible aerodynamic and mechanical work into a story people can understand and remember.',
+        details: ['Vehicle architecture', 'Aero surfaces', 'Power delivery'],
       },
       {
         index: '03',
         eyebrow: 'Act',
-        title: 'Move from signal to decision.',
-        description: 'Structured context gives operators a useful next step while keeping the website careful about claims it cannot prove.',
-        details: ['Decision context', 'Team workflows', 'Conversation pathway'],
+        title: 'Convert attention into momentum.',
+        description: 'Guide fans, sponsors, and technical partners from first impact to a clear next move.',
+        details: ['Race calendar', 'Partner stories', 'Team contact'],
       },
     ],
     process: [
-      { index: '01', title: 'Connect', description: 'Map the systems and information that matter.' },
-      { index: '02', title: 'Model', description: 'Organize the operating picture around real decisions.' },
-      { index: '03', title: 'Observe', description: 'Surface changes without unnecessary visual noise.' },
-      { index: '04', title: 'Act', description: 'Give every signal a clear and responsible next step.' },
+      { index: '01', title: 'Brief', description: 'Define the racing identity and competitive edge.' },
+      { index: '02', title: 'Engineer', description: 'Build the information system around speed and proof.' },
+      { index: '03', title: 'Direct', description: 'Synchronize film, typography, and interaction.' },
+      { index: '04', title: 'Launch', description: 'Put the marque on track for every screen.' },
     ],
   },
   {

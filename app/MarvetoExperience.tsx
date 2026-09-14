@@ -2,8 +2,7 @@
 
 import { FormEvent, MouseEvent, useEffect, useRef, useState } from 'react';
 import { assetPath, sitePath } from './asset-path';
-import HeroThreeWorld from './HeroThreeWorld';
-import HomeWorld from './HomeWorld';
+import ScrollVideoWorld from './ScrollVideoWorld';
 import { homeChapters, homeUltimateHref, mapHomeScrollProgress, sampleHomeJourney, sampleJourneyFrame } from './home-journey';
 import { applyPackageSelection, buildMailto, formatInquiry, Inquiry, InquiryErrors, validateInquiry } from './inquiry';
 import { authoredSceneOrder, authoredScenes, AuthoredSceneId } from './scene-registry';
@@ -202,8 +201,7 @@ export default function MarvetoExperience() {
             </div>
           ))}
         </div>
-        <HomeWorld />
-        <HeroThreeWorld />
+        <ScrollVideoWorld />
       </div>
 
       <div className="cinematic-narrative" aria-hidden="true">

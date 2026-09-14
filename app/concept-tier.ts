@@ -14,13 +14,3 @@ export function withExperienceTier(url: string, tier: ExperienceTier): string {
   next.searchParams.set('tier', tier);
   return `${next.pathname}${next.search}${next.hash}`;
 }
-
-export function shouldLoadUltimateJourney(
-  tier: ExperienceTier,
-  reducedMotion: boolean,
-  finePointer: boolean,
-  wideViewport: boolean,
-  webglAvailable: boolean,
-): boolean {
-  return tier === 'ultimate' && !reducedMotion && finePointer && wideViewport && webglAvailable;
-}
