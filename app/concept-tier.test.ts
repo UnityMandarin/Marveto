@@ -6,7 +6,7 @@ describe('industry concepts', () => {
   it('defines one honest concept for each requested industry', () => {
     expect(concepts.map(({ slug, industry }) => ({ slug, industry }))).toEqual([
       { slug: 'axiom', industry: 'Motorsport' },
-      { slug: 'serein', industry: 'Construction' },
+      { slug: 'serein', industry: 'Hospitality' },
       { slug: 'forma', industry: 'Medical' },
     ]);
     expect(concepts.every((concept) => concept.note.includes('studio concept'))).toBe(true);

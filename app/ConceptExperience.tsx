@@ -5,12 +5,13 @@ import { assetPath, sitePath } from './asset-path';
 import { Concept, ExperienceTier, tierDefinitions, tierOrder } from './concept-data';
 import { parseExperienceTier, withExperienceTier } from './concept-tier';
 import { sceneForConcept } from './scene-registry';
-import { RaceScrollVideo } from './ScrollVideoWorld';
+import { HotelScrollVideo, RaceScrollVideo } from './ScrollVideoWorld';
 import { useSmoothWheel } from './useSmoothWheel';
 
 function ConceptPicture({ concept, eager = false }: { concept: Concept; eager?: boolean }) {
   const scene = sceneForConcept(concept.slug);
   if (concept.slug === 'axiom') return <RaceScrollVideo />;
+  if (concept.slug === 'serein') return <HotelScrollVideo />;
   const desktopAvif = assetPath(scene?.desktopAvif ?? `${concept.image}.avif`);
   const desktopWebp = assetPath(scene?.desktopBase ?? `${concept.image}.webp`);
   const mobileAvif = assetPath(scene?.mobileAvif ?? `${concept.image}.avif`);
