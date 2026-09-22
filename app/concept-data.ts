@@ -47,7 +47,7 @@ export interface ConceptStep {
 export interface Concept {
   slug: 'axiom' | 'serein' | 'forma';
   name: string;
-  industry: 'Motorsport' | 'Hospitality' | 'Medical';
+  industry: 'Motorsport' | 'Hospitality' | 'Construction';
   descriptor: string;
   headline: string;
   headlineAccent: string;
@@ -224,17 +224,17 @@ export const concepts: Concept[] = [
   {
     slug: 'forma',
     name: 'Forma',
-    industry: 'Medical',
-    descriptor: 'A clearer digital path into care',
-    headline: 'Care, made',
-    headlineAccent: 'clearer.',
-    summary: 'A calm medical website concept that helps people understand available services, prepare for a visit, and find the right next step without confusion or exaggerated outcomes.',
-    primaryAction: 'Explore care options',
-    secondaryAction: 'Follow the patient journey',
-    statement: 'A healthcare website should reduce uncertainty, respect attention, and help people move forward with the right information.',
-    note: 'A self-initiated Marveto studio concept. Forma is a fictional medical organization and does not provide medical advice.',
-    image: '/images/serein',
-    imageAlt: 'A warm, calm interior with soft light, reflective water, and an amber privacy screen.',
+    industry: 'Construction',
+    descriptor: 'From first vision to the final detail',
+    headline: 'Built with',
+    headlineAccent: 'conviction.',
+    summary: 'A construction studio defined by material, precision, and ambition. Explore the work through a cinematic journey from first vision to finished space.',
+    primaryAction: 'Explore our expertise',
+    secondaryAction: 'See how we build',
+    statement: 'Great spaces begin with clear intent. Every material, every connection, every detail carries it forward.',
+    note: 'A self-initiated Marveto studio concept. Forma is a fictional construction company created to demonstrate our approach.',
+    image: '/videos/construction-film.mp4',
+    imageAlt: 'A cinematic construction film showing spaces taking shape.',
     accent: '#a99dff',
     glow: '#dff6f1',
     ink: '#12202a',
@@ -257,30 +257,30 @@ export const concepts: Concept[] = [
       {
         index: '01',
         eyebrow: 'Understand',
-        title: 'Find the right starting point.',
-        description: 'Group services around understandable needs and give every page a calm, accessible hierarchy.',
-        details: ['Service navigation', 'Plain-language content', 'Accessible structure'],
+        title: 'Give ambition a foundation.',
+        description: 'Bring site, scope, materials, and priorities into one clear plan before the work begins.',
+        details: ['Site planning', 'Material strategy', 'Scope definition'],
       },
       {
         index: '02',
         eyebrow: 'Prepare',
-        title: 'Know what comes next.',
-        description: 'A visible visit pathway can answer practical questions while keeping individual medical guidance with a qualified professional.',
-        details: ['Visit expectations', 'Preparation guidance', 'Responsible boundaries'],
+        title: 'Precision at every scale.',
+        description: 'Show the craft behind the structure, from coordinated delivery to the details that make a space work.',
+        details: ['Construction delivery', 'Project coordination', 'Quality control'],
       },
       {
         index: '03',
         eyebrow: 'Continue',
-        title: 'Keep the next step close.',
-        description: 'Make contact, follow-up information, and accessibility options easy to locate across every screen size.',
-        details: ['Appointment pathway', 'Follow-up access', 'Inclusive interaction'],
+        title: 'Finish with confidence.',
+        description: 'Carry a clear line of communication through completion, handover, and the life of the building.',
+        details: ['Project handover', 'Finishing details', 'Aftercare'],
       },
     ],
     process: [
-      { index: '01', title: 'Find care', description: 'Start with a clear view of services and fit.' },
-      { index: '02', title: 'Prepare', description: 'Review practical information before the visit.' },
-      { index: '03', title: 'Meet', description: 'Keep clinical decisions with qualified professionals.' },
-      { index: '04', title: 'Follow up', description: 'Make continuing information and contact easy to find.' },
+      { index: '01', title: 'Discover', description: 'Understand the site, ambition, and scope.' },
+      { index: '02', title: 'Prepare', description: 'Align materials, schedule, and the delivery team.' },
+      { index: '03', title: 'Build', description: 'Bring the plan to life with precision and care.' },
+      { index: '04', title: 'Deliver', description: 'Complete the details and hand over with clarity.' },
     ],
   },
 ];

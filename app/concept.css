@@ -205,7 +205,7 @@
 .concept-visual-break__image { min-height: 112svh; overflow: hidden; }
 .concept-visual-break__image picture, .concept-visual-break__image img, .concept-visual-break__image video { width: 100%; height: 100%; }
 .concept-visual-break__image img, .concept-visual-break__image video { object-fit: cover; filter: saturate(.82) contrast(1.05); transition: transform 1.2s cubic-bezier(.2,.7,.2,1), filter .7s ease; }
-.race-concept-video, .hotel-concept-video { display: block; }
+.race-concept-video, .hotel-concept-video, .construction-concept-video { display: block; }
 .concept-visual-break:hover img { transform: scale(1.04); filter: saturate(1); }
 .concept-visual-break__copy { display: flex; flex-direction: column; justify-content: center; padding: clamp(45px, 6vw, 96px); background: color-mix(in srgb, var(--concept-ink) 86%, var(--concept-accent)); }
 .concept-visual-break__copy h2 { margin: 0; font-size: clamp(56px, 7vw, 110px); line-height: .82; letter-spacing: -.07em; font-weight: 490; }

@@ -53,7 +53,8 @@ em { font-family: var(--font-editorial), Georgia, serif; font-weight: 500; }
 .site-shell[data-chapter='surface'] .home-fallback,
 .site-shell[data-chapter='signal'] .home-fallback,
 .site-shell[data-chapter='axiom'] .home-fallback,
-.site-shell[data-chapter='serein'] .home-fallback { opacity: 0; }
+.site-shell[data-chapter='serein'] .home-fallback,
+.site-shell[data-chapter='forma'] .home-fallback { opacity: 0; }
 .fallback-plate { opacity: 0; transform: scale(1.018); transition: opacity .72s cubic-bezier(.22,.74,.18,1), transform .9s cubic-bezier(.22,.74,.18,1); }
 .fallback-plate img { object-fit: cover; }
 .plate-surface { opacity: 1; transform: scale(1); }
@@ -70,7 +71,8 @@ em { font-family: var(--font-editorial), Georgia, serif; font-weight: 500; }
 .scroll-film { object-fit: cover; opacity: 0; filter: saturate(.88) contrast(1.08); transition: opacity .34s linear; }
 .site-shell .scroll-film--architecture { opacity: calc(1 - var(--race-blend, 0)); transition: none; }
 .site-shell .scroll-film--race { opacity: calc(var(--race-blend, 0) * (1 - var(--hotel-blend, 0))); transition: none; }
-.site-shell .scroll-film--hotel { opacity: var(--hotel-blend, 0); transition: none; }
+.site-shell .scroll-film--hotel { opacity: calc(var(--hotel-blend, 0) * (1 - var(--construction-blend, 0))); transition: none; }
+.site-shell .scroll-film--construction { opacity: var(--construction-blend, 0); transition: none; }
 .scroll-film__grade { position: absolute; z-index: 2; inset: 0; background: radial-gradient(circle at 72% 42%, transparent 15%, rgba(3,5,8,.15) 58%, rgba(3,5,8,.58)), linear-gradient(90deg, rgba(3,5,8,.56), transparent 54%); }
 .scroll-video-world::after { content: ''; position: absolute; z-index: 3; inset: 0; opacity: .2; background: var(--noise-image) repeat; mix-blend-mode: soft-light; }
 .beam-transition { position: absolute; z-index: 8; inset: 0; overflow: hidden; opacity: var(--beam-flash, 0); }
@@ -158,6 +160,7 @@ main { position: relative; z-index: 10; }
 .project-chapter { height: 142svh; }
 .project-axiom { height: 340svh; }
 .project-serein { height: 340svh; }
+.project-forma { height: 340svh; }
 .services-chapter { height: 390svh; }
 .studio-chapter { height: 350svh; }
 .pricing-chapter { height: 200svh; }
