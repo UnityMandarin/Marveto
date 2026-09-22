@@ -2,7 +2,6 @@ import { authoredScenes, AuthoredSceneId, ForegroundTone } from './scene-registr
 import { clampJourneyProgress } from './ultimate-journey';
 
 export type HomeChapterId = AuthoredSceneId;
-export type HomeQualityMode = 'full' | 'balanced' | 'static';
 export type CopyPhase = 'enter' | 'hold' | 'exit';
 
 export interface HomeChapterDefinition {
@@ -138,20 +137,6 @@ export function mapHomeScrollProgress(pageProgress: number, sectionStops: readon
   const local = clampJourneyProgress((page - physicalStart) / Math.max(physicalEnd - physicalStart, 0.0001));
   const active = homeChapters[index];
   return active.start + local * (active.end - active.start);
-}
-
-export function resolveHomeQuality(options: {
-  reducedMotion: boolean;
-  finePointer: boolean;
-  viewportWidth: number;
-  webgl: boolean;
-}): HomeQualityMode {
-  if (!options.webgl || options.reducedMotion || !options.finePointer || options.viewportWidth < 820) return 'static';
-  return options.viewportWidth >= 1180 ? 'full' : 'balanced';
-}
-
-export function shouldUseHomeWebgl(options: Parameters<typeof resolveHomeQuality>[0]): boolean {
-  return resolveHomeQuality(options) !== 'static';
 }
 
 export function homeUltimateHref(slug: string): string {

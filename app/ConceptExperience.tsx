@@ -1,25 +1,18 @@
 'use client';
 
-import { KeyboardEvent, lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { KeyboardEvent, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { assetPath, sitePath } from './asset-path';
 import { Concept, ExperienceTier, tierDefinitions, tierOrder } from './concept-data';
-import { parseExperienceTier, shouldLoadUltimateJourney, withExperienceTier } from './concept-tier';
+import { parseExperienceTier, withExperienceTier } from './concept-tier';
 import { sceneForConcept } from './scene-registry';
-
-const UltimateScene = lazy(() => import('./UltimateScene'));
-
-function webglAvailable(): boolean {
-  if (typeof document === 'undefined') return false;
-  try {
-    const canvas = document.createElement('canvas');
-    return Boolean(canvas.getContext('webgl2') || canvas.getContext('webgl'));
-  } catch {
-    return false;
-  }
-}
+import { ConstructionScrollVideo, HotelScrollVideo, RaceScrollVideo } from './ScrollVideoWorld';
+import { useSmoothWheel } from './useSmoothWheel';
 
 function ConceptPicture({ concept, eager = false }: { concept: Concept; eager?: boolean }) {
   const scene = sceneForConcept(concept.slug);
+  if (concept.slug === 'axiom') return <RaceScrollVideo />;
+  if (concept.slug === 'serein') return <HotelScrollVideo />;
+  if (concept.slug === 'forma') return <ConstructionScrollVideo />;
   const desktopAvif = assetPath(scene?.desktopAvif ?? `${concept.image}.avif`);
   const desktopWebp = assetPath(scene?.desktopBase ?? `${concept.image}.webp`);
   const mobileAvif = assetPath(scene?.mobileAvif ?? `${concept.image}.avif`);
@@ -36,41 +29,21 @@ function ConceptPicture({ concept, eager = false }: { concept: Concept; eager?: 
 }
 
 export default function ConceptExperience({ concept }: { concept: Concept }) {
+  useSmoothWheel();
   const root = useRef<HTMLDivElement>(null);
   const preservedScroll = useRef<number | null>(null);
   const [tier, setTier] = useState<ExperienceTier>('premium');
-  const [reducedMotion, setReducedMotion] = useState(false);
-  const [finePointer, setFinePointer] = useState(false);
-  const [wideViewport, setWideViewport] = useState(false);
-  const [hasWebgl, setHasWebgl] = useState(false);
   const selectedTier = tierDefinitions[tier];
   const conceptScene = sceneForConcept(concept.slug);
-  const showUltimate = shouldLoadUltimateJourney(tier, reducedMotion, finePointer, wideViewport, hasWebgl);
 
   useEffect(() => {
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const pointer = window.matchMedia('(pointer: fine)');
-    const viewport = window.matchMedia('(min-width: 981px)');
-    const onReduced = (event: MediaQueryListEvent) => setReducedMotion(event.matches);
-    const onPointer = (event: MediaQueryListEvent) => setFinePointer(event.matches);
-    const onViewport = (event: MediaQueryListEvent) => setWideViewport(event.matches);
     const onHistory = () => setTier(parseExperienceTier(window.location.search));
     const syncFrame = window.requestAnimationFrame(() => {
       setTier(parseExperienceTier(window.location.search));
-      setReducedMotion(reduced.matches);
-      setFinePointer(pointer.matches);
-      setWideViewport(viewport.matches);
-      setHasWebgl(webglAvailable());
     });
-    reduced.addEventListener('change', onReduced);
-    pointer.addEventListener('change', onPointer);
-    viewport.addEventListener('change', onViewport);
     window.addEventListener('popstate', onHistory);
     return () => {
       window.cancelAnimationFrame(syncFrame);
-      reduced.removeEventListener('change', onReduced);
-      pointer.removeEventListener('change', onPointer);
-      viewport.removeEventListener('change', onViewport);
       window.removeEventListener('popstate', onHistory);
     };
   }, []);
@@ -149,22 +122,7 @@ export default function ConceptExperience({ concept }: { concept: Concept }) {
       <div className="concept-cursor" aria-hidden="true" />
       <div className="concept-world" aria-hidden="true">
         <div className="concept-world__plate"><ConceptPicture concept={concept} eager /></div>
-        {showUltimate && (
-          <Suspense fallback={null}>
-            <UltimateScene
-              journey={concept.ultimateJourney}
-              image={assetPath(conceptScene?.desktopBase ?? `${concept.image}.webp`)}
-              accent={concept.accent}
-              glow={concept.glow}
-            />
-          </Suspense>
-        )}
       </div>
-      {showUltimate && (
-        <div className="journey-depth" aria-hidden="true">
-          <span>Surface</span><i><b /></i><span>Horizon</span>
-        </div>
-      )}
 
       <header className="concept-header">
         <a className="concept-header__back" href={sitePath('/#work')} aria-label="Back to Marveto examples">marveto<span>°</span></a>
@@ -217,9 +175,6 @@ export default function ConceptExperience({ concept }: { concept: Concept }) {
               </button>
             ))}
           </div>
-          {tier === 'ultimate' && !showUltimate && (
-            <p className="tier-fallback" role="status">Ultimate is using its polished static fallback on this device.</p>
-          )}
         </section>
 
         <section className="concept-statement concept-section" aria-labelledby="statement-title" data-journey-chapter="viewpoint">

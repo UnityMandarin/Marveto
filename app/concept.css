@@ -52,9 +52,10 @@
 .concept-world__plate,
 .concept-world__plate picture,
 .concept-world__plate img,
+.concept-world__plate video,
 .ultimate-journey,
 .ultimate-journey canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
-.concept-world__plate img { object-fit: cover; object-position: center; }
+.concept-world__plate img, .concept-world__plate video { object-fit: cover; object-position: center; }
 .concept-world__plate { opacity: .92; transition: opacity .8s ease, transform 1.2s cubic-bezier(.2,.7,.2,1); }
 .concept-shell[data-tier='premium'] .concept-world__plate { filter: saturate(.9) contrast(1.04) brightness(.74); }
 .concept-shell[data-tier='ultimate'][data-ultimate-ready='true'] .concept-world__plate { opacity: 0; transform: scale(1.018); }
@@ -119,9 +120,9 @@
   background: var(--concept-ink);
   color: white;
 }
-.concept-hero__media, .concept-hero__media picture, .concept-hero__media img { position: absolute; inset: 0; width: 100%; height: 100%; }
+.concept-hero__media, .concept-hero__media picture, .concept-hero__media img, .concept-hero__media video { position: absolute; inset: 0; width: 100%; height: 100%; }
 .concept-hero__media picture { z-index: 0; transform: scale(1.01); }
-.concept-hero__media img { object-fit: cover; filter: saturate(.88) contrast(1.04); transition: filter .8s ease, opacity .8s ease; }
+.concept-hero__media img, .concept-hero__media video { object-fit: cover; filter: saturate(.88) contrast(1.04); transition: filter .8s ease, opacity .8s ease; }
 .concept-hero__wash { position: absolute; z-index: 3; inset: 0; background: linear-gradient(180deg, rgba(4,7,16,.18), rgba(4,7,16,.04) 38%, rgba(4,7,16,.42)), radial-gradient(circle at 50% 52%, transparent 8%, rgba(3,5,13,.2) 72%); }
 .concept-hero__grid { position: absolute; z-index: 4; inset: 0; opacity: .25; background-image: linear-gradient(rgba(255,255,255,.12) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.12) 1px, transparent 1px); background-size: 9vw 9vw; mask-image: linear-gradient(to bottom, transparent 5%, black 35%, transparent 92%); }
 .concept-hero__copy { position: relative; z-index: 6; width: min(1320px, 93vw); padding-top: 7vh; text-align: center; }
@@ -202,8 +203,9 @@
 
 .concept-visual-break { position: relative; min-height: 112svh; display: grid; grid-template-columns: 1.4fr 1fr; overflow: hidden; background: var(--concept-ink); color: white; }
 .concept-visual-break__image { min-height: 112svh; overflow: hidden; }
-.concept-visual-break__image picture, .concept-visual-break__image img { width: 100%; height: 100%; }
-.concept-visual-break__image img { object-fit: cover; filter: saturate(.82) contrast(1.05); transition: transform 1.2s cubic-bezier(.2,.7,.2,1), filter .7s ease; }
+.concept-visual-break__image picture, .concept-visual-break__image img, .concept-visual-break__image video { width: 100%; height: 100%; }
+.concept-visual-break__image img, .concept-visual-break__image video { object-fit: cover; filter: saturate(.82) contrast(1.05); transition: transform 1.2s cubic-bezier(.2,.7,.2,1), filter .7s ease; }
+.race-concept-video, .hotel-concept-video, .construction-concept-video { display: block; }
 .concept-visual-break:hover img { transform: scale(1.04); filter: saturate(1); }
 .concept-visual-break__copy { display: flex; flex-direction: column; justify-content: center; padding: clamp(45px, 6vw, 96px); background: color-mix(in srgb, var(--concept-ink) 86%, var(--concept-accent)); }
 .concept-visual-break__copy h2 { margin: 0; font-size: clamp(56px, 7vw, 110px); line-height: .82; letter-spacing: -.07em; font-weight: 490; }

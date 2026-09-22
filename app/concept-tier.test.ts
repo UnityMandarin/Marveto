@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { concepts, tierDefinitions, tierOrder } from './concept-data';
-import { parseExperienceTier, shouldLoadUltimateJourney, withExperienceTier } from './concept-tier';
+import { parseExperienceTier, withExperienceTier } from './concept-tier';
 
 describe('industry concepts', () => {
   it('defines one honest concept for each requested industry', () => {
     expect(concepts.map(({ slug, industry }) => ({ slug, industry }))).toEqual([
-      { slug: 'axiom', industry: 'Technology' },
-      { slug: 'serein', industry: 'Construction' },
-      { slug: 'forma', industry: 'Medical' },
+      { slug: 'axiom', industry: 'Motorsport' },
+      { slug: 'serein', industry: 'Hospitality' },
+      { slug: 'forma', industry: 'Construction' },
     ]);
     expect(concepts.every((concept) => concept.note.includes('studio concept'))).toBe(true);
   });
@@ -55,13 +55,4 @@ describe('tier URL behavior', () => {
     }
   });
 
-  it('keeps Premium image-led and loads Ultimate WebGL only for capable fine pointers', () => {
-    expect(shouldLoadUltimateJourney('essential', false, true, true, true)).toBe(false);
-    expect(shouldLoadUltimateJourney('premium', false, true, true, true)).toBe(false);
-    expect(shouldLoadUltimateJourney('ultimate', true, true, true, true)).toBe(false);
-    expect(shouldLoadUltimateJourney('ultimate', false, false, true, true)).toBe(false);
-    expect(shouldLoadUltimateJourney('ultimate', false, true, false, true)).toBe(false);
-    expect(shouldLoadUltimateJourney('ultimate', false, true, true, false)).toBe(false);
-    expect(shouldLoadUltimateJourney('ultimate', false, true, true, true)).toBe(true);
-  });
 });

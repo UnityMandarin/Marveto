@@ -1,0 +1,164 @@
+'use client';
+
+import { useEffect, useRef } from 'react';
+import { assetPath } from './asset-path';
+
+function seek(video: HTMLVideoElement | null, progress: number) {
+  if (!video || video.seeking || !Number.isFinite(video.duration) || video.duration <= 0) return;
+  const nextTime = Math.min(video.duration - 0.04, Math.max(0, progress) * video.duration);
+  if (Math.abs(video.currentTime - nextTime) > 0.025) video.currentTime = nextTime;
+}
+
+export default function ScrollVideoWorld() {
+  const root = useRef<HTMLDivElement>(null);
+  const architecture = useRef<HTMLVideoElement>(null);
+  const race = useRef<HTMLVideoElement>(null);
+  const hotel = useRef<HTMLVideoElement>(null);
+  const construction = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const shell = root.current?.closest<HTMLElement>('.site-shell');
+    const architectureVideo = architecture.current;
+    const raceVideo = race.current;
+    const hotelVideo = hotel.current;
+    const constructionVideo = construction.current;
+    const hero = shell?.querySelector<HTMLElement>('[data-home-chapter="surface"]');
+    const signal = shell?.querySelector<HTMLElement>('[data-home-chapter="signal"]');
+    const raceChapter = shell?.querySelector<HTMLElement>('[data-home-chapter="axiom"]');
+    const hotelChapter = shell?.querySelector<HTMLElement>('[data-home-chapter="serein"]');
+    const constructionChapter = shell?.querySelector<HTMLElement>('[data-home-chapter="forma"]');
+    if (!shell || !hero || !signal || !raceChapter || !hotelChapter || !constructionChapter) return;
+
+    let architectureStart = 0;
+    let architectureEnd = 1;
+    let raceStart = 0;
+    let raceEnd = 1;
+    let hotelStart = 0;
+    let hotelEnd = 1;
+    let constructionStart = 0;
+    let constructionEnd = 1;
+    let scheduled = false;
+    let frameId = 0;
+
+    const measure = () => {
+      architectureStart = hero.getBoundingClientRect().top + window.scrollY;
+      architectureEnd = Math.max(architectureStart + 1, signal.getBoundingClientRect().top + window.scrollY + signal.offsetHeight - window.innerHeight);
+      raceStart = raceChapter.getBoundingClientRect().top + window.scrollY;
+      raceEnd = Math.max(raceStart + 1, raceStart + raceChapter.offsetHeight - window.innerHeight);
+      hotelStart = hotelChapter.getBoundingClientRect().top + window.scrollY;
+      hotelEnd = Math.max(hotelStart + 1, hotelStart + hotelChapter.offsetHeight - window.innerHeight);
+      constructionStart = constructionChapter.getBoundingClientRect().top + window.scrollY;
+      constructionEnd = Math.max(constructionStart + 1, constructionStart + constructionChapter.offsetHeight - window.innerHeight);
+    };
+    const update = () => {
+      scheduled = false;
+      const y = window.scrollY;
+      seek(architectureVideo, Math.min(1, Math.max(0, (y - architectureStart) / (architectureEnd - architectureStart))));
+      seek(raceVideo, Math.min(1, Math.max(0, (y - raceStart) / (raceEnd - raceStart))));
+      seek(hotelVideo, Math.min(1, Math.max(0, (y - hotelStart) / (hotelEnd - hotelStart))));
+      seek(constructionVideo, Math.min(1, Math.max(0, (y - constructionStart) / (constructionEnd - constructionStart))));
+
+      const flashWindow = Math.max(window.innerHeight * 0.24, 180);
+      const flashDistance = Math.min(Math.abs(y - raceStart), Math.abs(y - hotelStart), Math.abs(y - constructionStart));
+      const flash = flashDistance >= flashWindow ? 0 : Math.pow(1 - flashDistance / flashWindow, 2);
+      const easeBlend = (start: number) => {
+        const blend = Math.min(1, Math.max(0, (y - start + flashWindow) / (flashWindow * 2)));
+        return blend * blend * (3 - 2 * blend);
+      };
+      const exit = Math.min(1, Math.max(0, (y - constructionEnd) / window.innerHeight));
+      shell.style.setProperty('--construction-blend', String(easeBlend(constructionStart)));
+      shell.style.setProperty('--race-blend', String(easeBlend(raceStart)));
+      shell.style.setProperty('--hotel-blend', String(easeBlend(hotelStart)));
+      shell.style.setProperty('--film-opacity', String(1 - exit * exit * (3 - 2 * exit)));
+      shell.style.setProperty('--beam-flash', window.matchMedia('(prefers-reduced-motion: reduce)').matches ? '0' : (flash * .7).toFixed(4));
+    };
+    const schedule = () => {
+      if (scheduled) return;
+      scheduled = true;
+      frameId = window.requestAnimationFrame(update);
+    };
+    const refresh = () => { measure(); schedule(); };
+
+    measure();
+    update();
+    architectureVideo?.addEventListener('loadedmetadata', schedule);
+    raceVideo?.addEventListener('loadedmetadata', schedule);
+    hotelVideo?.addEventListener('loadedmetadata', schedule);
+    architectureVideo?.addEventListener('seeked', schedule);
+    raceVideo?.addEventListener('seeked', schedule);
+    hotelVideo?.addEventListener('seeked', schedule);
+    constructionVideo?.addEventListener('loadedmetadata', schedule);
+    constructionVideo?.addEventListener('seeked', schedule);
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', refresh);
+    return () => {
+      architectureVideo?.removeEventListener('loadedmetadata', schedule);
+      raceVideo?.removeEventListener('loadedmetadata', schedule);
+      hotelVideo?.removeEventListener('loadedmetadata', schedule);
+      architectureVideo?.removeEventListener('seeked', schedule);
+      raceVideo?.removeEventListener('seeked', schedule);
+      hotelVideo?.removeEventListener('seeked', schedule);
+      constructionVideo?.removeEventListener('loadedmetadata', schedule);
+      constructionVideo?.removeEventListener('seeked', schedule);
+      window.cancelAnimationFrame(frameId);
+      window.removeEventListener('scroll', schedule);
+      window.removeEventListener('resize', refresh);
+      shell.style.removeProperty('--beam-flash');
+    };
+  }, []);
+
+  return (
+    <div ref={root} className="scroll-video-world">
+      <video ref={architecture} className="scroll-film scroll-film--architecture" src={assetPath('/videos/architectural-film.mp4')} muted playsInline preload="auto" tabIndex={-1} />
+      <video ref={race} className="scroll-film scroll-film--race" src={assetPath('/videos/race-car.mp4')} muted playsInline preload="auto" tabIndex={-1} />
+      <video ref={hotel} className="scroll-film scroll-film--hotel" src={assetPath('/videos/hotel-walkthrough.mp4')} muted playsInline preload="auto" tabIndex={-1} />
+      <div className="scroll-film__grade" />
+      <video ref={construction} className="scroll-film scroll-film--construction" src={assetPath('/videos/construction-film.mp4')} muted playsInline preload="auto" tabIndex={-1} />
+      <div className="beam-transition"><i /><b /></div>
+      <div className="race-interface"><span>APEX / R-01</span><i /><span>Velocity is a language</span></div>
+      <div className="hotel-interface"><span>AURELIA / SUITE 08</span><i /><span>Arrive before you arrive</span></div>
+    </div>
+  );
+}
+
+export function RaceScrollVideo() {
+  return <ConceptScrollVideo src="/videos/race-car.mp4" className="race-concept-video" />;
+}
+
+export function HotelScrollVideo() {
+  return <ConceptScrollVideo src="/videos/hotel-walkthrough.mp4" className="hotel-concept-video" />;
+}
+
+export function ConstructionScrollVideo() {
+  return <ConceptScrollVideo src="/videos/construction-film.mp4" className="construction-concept-video" />;
+}
+
+function ConceptScrollVideo({ src, className }: { src: string; className: string }) {
+  const video = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const raceVideo = video.current;
+    let scheduled = false;
+    const update = () => {
+      scheduled = false;
+      const maximum = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
+      seek(raceVideo, window.scrollY / maximum);
+    };
+    const schedule = () => {
+      if (scheduled) return;
+      scheduled = true;
+      window.requestAnimationFrame(update);
+    };
+    update();
+    raceVideo?.addEventListener('loadedmetadata', schedule);
+    raceVideo?.addEventListener('seeked', schedule);
+    window.addEventListener('scroll', schedule, { passive: true });
+    return () => {
+      raceVideo?.removeEventListener('loadedmetadata', schedule);
+      raceVideo?.removeEventListener('seeked', schedule);
+      window.removeEventListener('scroll', schedule);
+    };
+  }, []);
+
+  return <video ref={video} className={className} src={assetPath(src)} muted playsInline preload="auto" tabIndex={-1} />;
+}
